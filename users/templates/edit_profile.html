@@ -1,0 +1,13 @@
+<h1>Редактировать профиль</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h3>Ник</h3>
+    {{ u_form.as_p }}
+
+    <h3>Профиль</h3>
+    {{ p_form.as_p }}
+
+    <button type="submit">Сохранить</button>
+</form>
