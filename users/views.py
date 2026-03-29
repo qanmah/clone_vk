@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .forms import RegisterForm, UserUpdateForm, ProfileUpdateForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+import os
+
 
 def home(request):
     return render(request, 'home.html')
@@ -40,8 +42,19 @@ def edit_profile(request):
         )
 
         if u_form.is_valid() and p_form.is_valid():
+
+            profile = request.user.profile
+
+            # 🧹 Удаление старого файла при Clear
+            if 'avatar-clear' in request.POST:
+                if profile.avatar:
+                    if os.path.isfile(profile.avatar.path):
+                        os.remove(profile.avatar.path)
+                    profile.avatar = None
+
             u_form.save()
             p_form.save()
+
             return redirect('user_profile', username=request.user.username)
 
     else:

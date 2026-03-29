@@ -1,11 +1,14 @@
-<h1>{{ profile_user.username }}</h1>
+{% extends 'base.html' %}
 
+{% block content %}
+
+<h1>Профиль {{ profile_user.username }}</h1>
 {% if profile_user.profile.avatar %}
-<img src="{{ profile_user.profile.avatar.url }}" width="150">
+    <img src="{{ profile_user.profile.avatar.url }}" width="150">
 {% endif %}
-
 <p>{{ profile_user.profile.bio }}</p>
 
 {% if request.user == profile_user %}
-<a href="/profile/edit/">Редактировать профиль</a>
+    <a href="{% url 'edit_profile' %}">Редактировать профиль</a>
 {% endif %}
+{% endblock %}
