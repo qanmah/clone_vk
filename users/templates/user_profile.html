@@ -5,10 +5,149 @@
 <h1>Профиль {{ profile_user.username }}</h1>
 {% if profile_user.profile.avatar %}
     <img src="{{ profile_user.profile.avatar.url }}" width="150">
+{% else %}
+    <img src="/media/avatars/default.jpg" width="150">
 {% endif %}
 <p>{{ profile_user.profile.bio }}</p>
 
 {% if request.user == profile_user %}
     <a href="{% url 'edit_profile' %}">Редактировать профиль</a>
 {% endif %}
+
+<p>
+    <span onclick="openFollowers()" style="cursor:pointer;">
+        👥 {{ followers|length }} Подписчики
+    </span>
+    |
+    <span onclick="openFollowing()" style="cursor:pointer;">
+        ➡️ {{ followings|length }} Подписки
+    </span>
+</p>
+
+<!-- затемнение -->
+<div id="overlay" onclick="closeModal()" style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
+"></div>
+
+<!-- окно -->
+<div id="modal" style="
+    display:none;
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%, -50%);
+    width:300px;
+    max-height:400px;
+    overflow-y:auto;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+">
+
+    <div style="text-align:right;">
+        <span onclick="closeModal()" style="cursor:pointer;">❌</span>
+    </div>
+
+    <div id="modal-content">
+        <!-- сюда будет вставляться список -->
+    </div>
+
+</div>
+
+<div id="followers-data" style="display:none;">
+    {% for f in followers %}
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+
+            {% if f.from_user.profile.avatar %}
+                <img src="{{ f.from_user.profile.avatar.url }}" width="30" height="30" style="border-radius:50%;">
+            {% else %}
+                <img src="/media/avatars/default.jpg" width="30" height="30" style="border-radius:50%;">
+            {% endif %}
+
+            <a href="/profile/{{ f.from_user.username }}">
+                {{ f.from_user.username }}
+            </a>
+
+        </div>
+    {% empty %}
+        <p>Никто не подписан</p>
+    {% endfor %}
+</div>
+
+<div id="following-data" style="display:none;">
+    {% for f in followings %}
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+
+            {% if f.to_user.profile.avatar %}
+                <img src="{{ f.to_user.profile.avatar.url }}" width="30" height="30" style="border-radius:50%;">
+            {% else %}
+                <img src="/media/avatars/default.jpg" width="30" height="30" style="border-radius:50%;">
+            {% endif %}
+
+            <a href="/profile/{{ f.to_user.username }}">
+                {{ f.to_user.username }}
+            </a>
+
+        </div>
+    {% empty %}
+        <p>Ни на кого не подписан</p>
+    {% endfor %}
+</div>
+
+{% if request.user != profile_user %}
+
+    {% if is_friend %}
+        <p>👥 Вы взаимно подписаны</p>
+
+        <a href="{% url 'unfollow' profile_user.username %}">
+            ❌ Отписаться
+        </a>
+
+    {% elif following %}
+        <p>📨 Вы подписаны</p>
+
+        <a href="{% url 'unfollow' profile_user.username %}">
+            ❌ Отписаться
+        </a>
+
+    {% elif follower_back %}
+        <p>👀 На вас подписаны</p>
+
+        <a href="{% url 'send_friend_request' profile_user.username %}">
+            ➕ Подписаться в ответ
+        </a>
+
+    {% else %}
+        <a href="{% url 'send_friend_request' profile_user.username %}">
+            ➕ Подписаться
+        </a>
+    {% endif %}
+
+{% endif %}
+
+<script>
+function openFollowers() {
+    document.getElementById("modal").style.display = "block";
+    document.getElementById("overlay").style.display = "block";
+
+    document.getElementById("modal-content").innerHTML =
+        document.getElementById("followers-data").innerHTML;
+}
+
+function openFollowing() {
+    document.getElementById("modal").style.display = "block";
+    document.getElementById("overlay").style.display = "block";
+
+    document.getElementById("modal-content").innerHTML =
+        document.getElementById("following-data").innerHTML;
+}
+
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+    document.getElementById("overlay").style.display = "none";
+}
+</script>
 {% endblock %}
