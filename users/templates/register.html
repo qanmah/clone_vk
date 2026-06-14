@@ -1,7 +1,264 @@
-<h2>Регистрация</h2>
+{% extends 'base.html' %}
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Зарегистрироваться</button>
-</form>
+{% block content %}
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div class="auth-header">
+            <div class="auth-icon">
+                <span class="material-symbols-rounded">person_add</span>
+            </div>
+
+            <h1>Регистрация</h1>
+            <p>Создай новый аккаунт</p>
+        </div>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+
+            <div class="auth-fields">
+
+                <div class="auth-input-group">
+                    {{ form.username }}
+                    <span>Username</span>
+                </div>
+
+                <div class="auth-input-group">
+                    {{ form.email }}
+                    <span>Email</span>
+                </div>
+
+                <div class="auth-input-group password-input-wrapper">
+                    {{ form.password1 }}
+                    <span>Пароль</span>
+
+                    <button type="button"
+                            class="toggle-password-btn"
+                            onclick="togglePassword('id_password1', this)">
+                        <span class="material-symbols-rounded">visibility</span>
+                    </button>
+                </div>
+
+                <div class="password-rules-mini">
+                    <span data-rule="length">8–16 символов</span>
+                    <span data-rule="letters">A-Z и a-z</span>
+                    <span data-rule="digit">цифра</span>
+                    <span data-rule="special">спецсимвол</span>
+                    <span data-rule="weak">не лёгкий</span>
+                </div>
+
+                <div class="auth-input-group password-input-wrapper">
+                    {{ form.password2 }}
+                    <span>Повтори пароль</span>
+
+                    <button type="button"
+                            class="toggle-password-btn"
+                            onclick="togglePassword('id_password2', this)">
+                        <span class="material-symbols-rounded">visibility</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <button type="submit" class="auth-btn">
+                <span class="material-symbols-rounded">done</span>
+                Зарегистрироваться
+            </button>
+        </form>
+
+        <div class="auth-bottom">
+            Уже есть аккаунт?
+            <a href="/login/">Войти</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.querySelectorAll(".auth-form input").forEach(input => {
+    if (input.id === "id_username") input.placeholder = "Username";
+    if (input.id === "id_email") input.placeholder = "Email";
+    if (input.id === "id_password") input.placeholder = "Пароль";
+    if (input.id === "id_password1") input.placeholder = "Пароль";
+    if (input.id === "id_password2") input.placeholder = "Повтори пароль";
+});
+
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+
+    if (!input) return;
+
+    const icon = button.querySelector(".material-symbols-rounded");
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "visibility_off";
+    } else {
+        input.type = "password";
+        icon.textContent = "visibility";
+    }
+}
+
+const authForm = document.querySelector(".auth-form");
+
+const usernameInput = document.querySelector("#id_username");
+const password1Input = document.querySelector("#id_password1");
+const password2Input = document.querySelector("#id_password2");
+
+const rules = {
+    length: document.querySelector('[data-rule="length"]'),
+    letters: document.querySelector('[data-rule="letters"]'),
+    digit: document.querySelector('[data-rule="digit"]'),
+    special: document.querySelector('[data-rule="special"]'),
+    weak: document.querySelector('[data-rule="weak"]'),
+};
+
+function setInputState(input, ok) {
+    if (!input) return;
+
+    input.classList.remove("valid", "invalid");
+
+    if (input.value.trim() === "") return;
+
+    input.classList.add(ok ? "valid" : "invalid");
+}
+
+function updateRule(element, ok, active) {
+    if (!element) return;
+
+    element.classList.remove("ok", "bad");
+
+    if (!active) return;
+
+    element.classList.add(ok ? "ok" : "bad");
+}
+
+function validatePassword() {
+    if (!password1Input) return;
+
+    const password = password1Input.value;
+
+    const checks = {
+        length:
+            password.length >= 8 &&
+            password.length <= 16,
+
+        letters:
+            /[A-Z]/.test(password) &&
+            /[a-z]/.test(password),
+
+        digit:
+            /\d/.test(password),
+
+        special:
+            /[^\w\s]/.test(password),
+
+        weak:
+            ![
+                "password123!",
+                "qwerty123!",
+                "admin123!",
+                "12345678!",
+                "11111111!"
+            ].includes(password.toLowerCase())
+    };
+
+    const active = password.length > 0;
+
+    updateRule(rules.length, checks.length, active);
+    updateRule(rules.letters, checks.letters, active);
+    updateRule(rules.digit, checks.digit, active);
+    updateRule(rules.special, checks.special, active);
+    updateRule(rules.weak, checks.weak, active);
+
+    setInputState(
+        password1Input,
+        Object.values(checks).every(Boolean)
+    );
+
+    if (password2Input) {
+        const same =
+            password2Input.value &&
+            password2Input.value === password;
+
+        setInputState(password2Input, same);
+    }
+}
+
+function showFieldError(input, text) {
+    if (!input) return;
+
+    let error = input.parentElement.querySelector(".auth-field-error");
+
+    if (!error) {
+        error = document.createElement("div");
+        error.className = "auth-field-error";
+        input.parentElement.appendChild(error);
+    }
+
+    error.textContent = text;
+    error.classList.add("active");
+
+    input.classList.add("invalid");
+}
+
+function clearFieldError(input) {
+    if (!input) return;
+
+    const error = input.parentElement.querySelector(".auth-field-error");
+
+    if (error) {
+        error.classList.remove("active");
+    }
+
+    input.classList.remove("invalid");
+}
+
+document.querySelectorAll(".auth-form input").forEach(input => {
+
+    input.addEventListener("input", () => {
+        clearFieldError(input);
+        validatePassword();
+    });
+
+});
+
+authForm.addEventListener("submit", function(event) {
+
+    let hasError = false;
+
+    document.querySelectorAll(".auth-form input").forEach(input => {
+
+        if (input.type === "hidden") return;
+
+        if (input.value.trim() === "") {
+
+            hasError = true;
+
+            showFieldError(
+                input,
+                "Заполни это поле"
+            );
+        }
+    });
+
+    if (password1Input.value !== password2Input.value) {
+
+        hasError = true;
+
+        showFieldError(
+            password2Input,
+            "Пароли не совпадают"
+        );
+    }
+
+    if (hasError) {
+        event.preventDefault();
+    }
+});
+
+validatePassword();
+</script>
+
+{% endblock %}

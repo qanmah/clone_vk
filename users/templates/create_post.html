@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="create-post-page">
+
+    <form method="post" enctype="multipart/form-data" class="create-post-card">
+        {% csrf_token %}
+
+        <h2>Создать пост</h2>
+
+        <label>Видео</label>
+        <input type="file" name="video" accept="video/*" required>
+
+        <label>Описание</label>
+        <textarea name="description" placeholder="Текст, #хэштеги, @друзья"></textarea>
+
+        <button type="submit">
+            Опубликовать
+        </button>
+    </form>
+
+</div>
+
+{% endblock %}

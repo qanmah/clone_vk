@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="post-detail-page">
+
+    <div class="post-detail-card">
+
+        <div class="post-detail-video">
+            <video controls>
+                <source src="{{ post.video.url }}">
+            </video>
+        </div>
+
+        <div class="post-detail-info">
+
+            <a href="{% url 'home' %}" class="back-link">
+                ← Назад в ленту
+            </a>
+
+            <h2>@{{ post.author.username }}</h2>
+
+            {% if post.description %}
+                <p class="post-description">
+                    {{ post.description }}
+                </p>
+            {% endif %}
+
+            <h3>Комментарии</h3>
+
+            <form method="post" action="{% url 'add_comment' post.id %}" class="comment-form detail-comment-form">
+                {% csrf_token %}
+
+                <input
+                    type="text"
+                    name="text"
+                    placeholder="Написать комментарий..."
+                    autocomplete="off"
+                >
+
+                <button type="submit">
+                    Отправить
+                </button>
+            </form>
+
+            <div class="detail-comments-list">
+                {% for comment in comments %}
+                    <div class="post-comment">
+                        <b>@{{ comment.author.username }}</b>
+                        <span>{{ comment.text }}</span>
+                    </div>
+                {% empty %}
+                    <p class="no-comments">
+                        Комментариев пока нет.
+                    </p>
+                {% endfor %}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,13 +1,119 @@
-<h1>Редактировать профиль</h1>
+{% extends 'base.html' %}
 
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
+{% block content %}
 
-    <h3>Ник</h3>
-    {{ u_form.as_p }}
+<div class="edit-profile-page">
 
-    <h3>Профиль</h3>
-    {{ p_form.as_p }}
+    <form method="POST" enctype="multipart/form-data" class="edit-profile-card">
+        {% csrf_token %}
 
-    <button type="submit">Сохранить</button>
-</form> 
+        <div class="edit-profile-head">
+            <div>
+                <h1>Редактировать профиль</h1>
+                <p>Измени ник, аватар и описание профиля</p>
+            </div>
+
+            <a href="/profile/{{ request.user.username }}" class="edit-back-btn">
+                <span class="material-symbols-rounded">arrow_back</span>
+                Назад
+            </a>
+        </div>
+
+        <div class="edit-profile-section">
+            <h3>
+                <span class="material-symbols-rounded">person</span>
+                Аккаунт
+            </h3>
+
+            <div class="form-box">
+                {{ u_form.as_p }}
+            </div>
+        </div>
+
+        <div class="edit-profile-section">
+            <h3>
+                <span class="material-symbols-rounded">badge</span>
+                Профиль
+            </h3>
+
+            <div class="form-box">
+                {{ p_form.as_p }}
+            </div>
+        </div>
+
+        <div class="edit-profile-actions">
+            <a href="/profile/{{ request.user.username }}" class="edit-btn secondary">
+                Отмена
+            </a>
+
+            <button type="submit" class="edit-btn primary">
+                <span class="material-symbols-rounded">save</span>
+                Сохранить
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<div id="avatar-preview-modal" class="avatar-preview-modal" onclick="closeAvatarPreview()">
+    <div class="avatar-preview-box" onclick="event.stopPropagation()">
+        <button type="button" class="avatar-preview-close" onclick="closeAvatarPreview()">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+
+        <img id="avatar-preview-image" src="" alt="avatar preview">
+    </div>
+</div>
+
+<script>
+    let selectedAvatarUrl = null;
+
+    const avatarInput = document.getElementById("avatar-file-input");
+    const newAvatarActions = document.getElementById("new-avatar-actions");
+    const avatarSelectedState = document.getElementById("avatar-selected-state");
+    const avatarUploadText = document.getElementById("avatar-upload-text");
+
+    if (avatarInput) {
+        avatarInput.addEventListener("change", function() {
+            const file = avatarInput.files[0];
+
+            if (!file) return;
+
+            selectedAvatarUrl = URL.createObjectURL(file);
+
+            newAvatarActions.classList.remove("hidden-avatar-actions");
+            avatarSelectedState.classList.add("active");
+            avatarUploadText.textContent = "Аватар выбран";
+        });
+    }
+
+    function openAvatarPreview(url) {
+        const modal = document.getElementById("avatar-preview-modal");
+        const image = document.getElementById("avatar-preview-image");
+
+        image.src = url;
+        modal.classList.add("active");
+    }
+
+    function openSelectedAvatarPreview() {
+        if (!selectedAvatarUrl) return;
+        openAvatarPreview(selectedAvatarUrl);
+    }
+
+    function clearSelectedAvatar() {
+        if (!avatarInput) return;
+
+        avatarInput.value = "";
+        selectedAvatarUrl = null;
+
+        newAvatarActions.classList.add("hidden-avatar-actions");
+        avatarSelectedState.classList.remove("active");
+        avatarUploadText.textContent = "Выбрать новый аватар";
+    }
+
+    function closeAvatarPreview() {
+        document.getElementById("avatar-preview-modal").classList.remove("active");
+    }
+</script>
+
+{% endblock %}

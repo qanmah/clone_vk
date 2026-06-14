@@ -1,158 +1,154 @@
+{% load static %}
 <!DOCTYPE html>
-
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
     <title>VK Clone</title>
-    <link
-        rel="stylesheet"
-        href="https://www.nerdfonts.com/cheat-sheet?utm_source=chatgpt.com"
-        />
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 <body>
 
-<div style="background: #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+<header class="navbar">
+    <div class="nav-left">
+        <a href="/" class="nav-link">
+            <span class="material-symbols-rounded">home</span>
+            Главная
+        </a>
 
-<div>
+        {% if user.is_authenticated %}
+            <div class="notifications">
+                <button onclick="toggleNotifications()" class="notif-btn">
+                    <span class="material-symbols-rounded">notifications</span>
+                    <span>Активность</span>
 
-    <a href="/">🏠 Главная</a>
+                    {% if activity_count > 0 %}
+                        <span class="activity-badge">{{ activity_count }}</span>
+                    {% endif %}
+                </button>
 
-    {% if user.is_authenticated %}
-        | <a href="/profile/{{ user.username }}">👤 Профиль</a>
-    {% endif %}
-
-    {% if user.is_authenticated %}
-    <div style="position: relative; display:inline-block; margin-left:15px;">
-
-        <button onclick="toggleNotifications()" style="cursor:pointer;">
-            🔔 Активность ({{ activity_count }})
-        </button>
-
-        <div id="notifications-box" style="
-            display:none;
-            position:absolute;
-            top:30px;
-            left:0;
-            background:white;
-            border:1px solid #ccc;
-            padding:10px;
-            width:300px;
-            z-index:100;
-        ">
-
-        <h4>Центр Уведомлений</h4>
-
-        {% if unread_chats or requests %}
-
-            {% if unread_chats %}
-                {% for chat in unread_chats %}
-                    <div style="margin-bottom:10px;">
-                        💬 Вам написал(-а) 
-                        <a href="/chat/{{ chat.sender.username }}/">
-                            <b>{{ chat.sender.username }}</b>
-                        </a>
-                        {% if chat.count > 1 %}
-                            ({{ chat.count }})
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% endif %}
-
-            {% if requests %}
-                {% for req in requests %}
-                    <div style="margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-
-                        {% if req.from_user.profile.avatar %}
-                            <img src="{{ req.from_user.profile.avatar.url }}" width="30" height="30" style="border-radius:50%;">
-                        {% else %}
-                            <img src="/media/avatars/default.jpg" width="30" height="30" style="border-radius:50%;">
-                        {% endif %}
-
+                <div id="notifications-box" class="notifications-box">
+                    <div class="notif-header">
                         <div>
-                            <div>
-                                <a href="/profile/{{ req.from_user.username }}">
-                                    <b>{{ req.from_user.username }}</b>
-                                </a>
-                                подписался на вас
-                            </div>
-
-                            <div>
-                                {% if req.from_user.id in following_ids and req.from_user.id in follower_ids %}
-                                    👥 Вы уже друзья
-                                {% else %}
-                                    <a href="{% url 'send_friend_request' req.from_user.username %}">
-                                        ➕ Подписаться в ответ
-                                    </a>
-                                {% endif %}
-                            </div>
-
-                            <div>
-                                <a href="{% url 'mark_read' req.id %}">✔ Прочитано</a>
-                            </div>
+                            <h4>Центр активности</h4>
+                            <p>Сообщения и подписки</p>
                         </div>
 
+                        <span class="material-symbols-rounded">bolt</span>
                     </div>
-                {% endfor %}
 
-                <div style="margin-top:10px; text-align:right;">
-                    <a href="{% url 'mark_all_read' %}">📩 Прочитать все</a>
+                    {% if unread_chats or requests %}
+
+                        {% if unread_chats %}
+                            {% for chat in unread_chats %}
+                                <div class="notif-item">
+                                    💬 Вам написал(-а)
+                                    <a href="/chat/{{ chat.sender.username }}/">
+                                        <b>{{ chat.sender.username }}</b>
+                                    </a>
+
+                                    {% if chat.count > 1 %}
+                                        <span>({{ chat.count }})</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if requests %}
+                            {% for req in requests %}
+                                <div class="notif-item notif-user-row">
+                                    {% if req.from_user.profile.avatar %}
+                                        <img src="{{ req.from_user.profile.avatar.url }}" class="avatar">
+                                    {% else %}
+                                        <img src="/media/avatars/default.jpg" class="avatar">
+                                    {% endif %}
+
+                                    <div>
+                                        <div>
+                                            <a href="/profile/{{ req.from_user.username }}">
+                                                <b>{{ req.from_user.username }}</b>
+                                            </a>
+                                            подписался на вас
+                                        </div>
+
+                                        <div class="notif-actions">
+                                            {% if req.from_user.id in following_ids and req.from_user.id in follower_ids %}
+                                                <span>👥 Вы уже друзья</span>
+                                            {% else %}
+                                                <a href="{% url 'send_friend_request' req.from_user.username %}">
+                                                    ➕ Подписаться в ответ
+                                                </a>
+                                            {% endif %}
+
+                                            <a href="{% url 'mark_read' req.id %}">✔ Прочитано</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+
+                            <div class="notif-read-all">
+                                <a href="{% url 'mark_all_read' %}">📩 Прочитать все</a>
+                            </div>
+                        {% endif %}
+
+                    {% else %}
+                        <p class="empty-text">Тут пока пусто :)</p>
+                    {% endif %}
                 </div>
-            {% endif %}
-
-        {% else %}
-
-            <p>Тут пока пусто :)</p>
-
+            </div>
         {% endif %}
-
-        </div>
     </div>
-    {% endif %}
 
-</div>
+    <div class="nav-right">
+        {% if user.is_authenticated %}
+            <a href="{% url 'chat' %}" class="nav-link">
+                <span class="material-symbols-rounded">chat</span>
+                Чаты
+            </a>
 
-<!-- Правая часть -->
-<div>
-    {% if user.is_authenticated %}
+            <a href="/profile/{{ user.username }}" class="username profile-username">
+                {{ user.username }}
+            </a>
 
-        <a href="{% url 'chat' %}" class="nav-link">💬 Чат</a>
+            <form action="/logout/" method="post">
+                {% csrf_token %}
+                <button class="logout-btn">
+                    <span class="material-symbols-rounded">logout</span>
+                    Выйти
+                </button>
+            </form>
+        {% else %}
+            <a href="/login/" class="nav-link">Войти</a>
+            <a href="/register/" class="nav-link">Регистрация</a>
+        {% endif %}
+    </div>
+</header>
 
-        <span>👋 {{ user.username }}</span>
-
-        <form action="/logout/" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button style="margin-left:10px;">🚪 Выйти</button>
-        </form>
-
-    {% else %}
-        <a href="/login/">Войти</a>
-        | <a href="/register/">Регистрация</a>
-    {% endif %}
-</div>
-
-</div>
-
-<hr>
-
-<!-- 📄 Контент -->
-
-{% block content %}
-{% endblock %}
-
-<!-- ⚡ JS -->
+<main class="page-content">
+    {% block content %}
+    {% endblock %}
+</main>
 
 <script>
 function toggleNotifications() {
     const box = document.getElementById('notifications-box');
-    box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+    box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-// закрытие при клике вне окна
 document.addEventListener('click', function(event) {
     const box = document.getElementById('notifications-box');
 
-    if (!event.target.closest('#notifications-box') &&
-        !event.target.closest('button')) {
-        if (box) box.style.display = 'none';
+    if (
+        box &&
+        !event.target.closest('#notifications-box') &&
+        !event.target.closest('.notif-btn')
+    ) {
+        box.style.display = 'none';
     }
 });
 </script>

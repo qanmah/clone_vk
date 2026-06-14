@@ -2,21 +2,432 @@
 
 {% block content %}
 
-<h1>Добро пожаловать в нашу соцсеть</h1>
+<div class="home-page">
 
-{% if user.is_authenticated %}
-    <p>Вы вошли как <b>{{ user.username }}</b></p>
+{% if not user.is_authenticated %}
 
-    <a href="/profile/{{ user.username }}">
-        👉 Перейти в мой профиль
-    </a>
+<section class="home-hero">
+    <div class="home-hero-content">
+        <div class="home-badge">NEW SOCIAL PLATFORM</div>
+
+        <h1>Смотри.<br>Создавай.<br>Залипай.</h1>
+
+        <p>
+            Современная лента с видео, постами, комментариями,
+            лайками и красивым интерфейсом.
+        </p>
+
+        <div class="home-actions">
+            <a href="/register/" class="home-btn primary">Создать аккаунт</a>
+            <a href="/login/" class="home-btn secondary">Войти</a>
+        </div>
+    </div>
+
+    <div class="home-preview-card">
+        <div class="preview-header">
+            <div class="preview-avatar"></div>
+            <div>
+                <div class="preview-name">@username</div>
+                <div class="preview-time">online</div>
+            </div>
+        </div>
+
+        <div class="preview-video"></div>
+
+        <div class="preview-actions">
+            <span class="material-symbols-rounded">favorite</span>
+            <span class="material-symbols-rounded">chat_bubble</span>
+            <span class="material-symbols-rounded">bookmark</span>
+        </div>
+    </div>
+</section>
 
 {% else %}
-    <p>Чтобы начать — войдите или зарегистрируйтесь</p>
 
-    <a href="/login/">Войти</a>
-    <br>
-    <a href="/register/">Регистрация</a>
+<section class="feed-section">
+
+    <div class="feed-layout">
+
+        <aside class="feed-sidebar">
+
+            <a href="/" class="sidebar-icon active">
+                <span class="material-symbols-rounded">home</span>
+            </a>
+
+            <a href="#" class="sidebar-icon">
+                <span class="material-symbols-rounded">subscriptions</span>
+            </a>
+
+            <a href="#" class="sidebar-icon">
+                <span class="material-symbols-rounded">bookmark</span>
+            </a>
+
+            <a href="{% url 'create_post' %}" class="sidebar-icon create">
+                <span class="material-symbols-rounded">add</span>
+            </a>
+
+        </aside>
+
+        <main class="feed-main">
+
+            {% if posts %}
+            <div class="posts-feed">
+
+        {% for post in posts %}
+        <article class="post-card">
+
+            <div class="post-video-wrap">
+
+                <div class="post-main">
+                    <div class="post-top-overlay">
+                        <div class="post-author">
+                            <div class="post-avatar">
+                                {{ post.author.username|first|upper }}
+                            </div>
+
+                            <div class="post-author-info">
+                                <b>@{{ post.author.username }}</b>
+                                <span>{{ post.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                        </div>
+
+                        <button type="button" class="post-more-btn">
+                            <span class="material-symbols-rounded">more_horiz</span>
+                        </button>
+                    </div>
+
+                    <div class="custom-video-player">
+                        <video class="post-video" data-post="{{ post.id }}" playsinline loop>
+                            <source src="{{ post.video.url }}">
+                        </video>
+
+                        <button type="button" class="video-play-btn visible">
+                            <span class="material-symbols-rounded">play_arrow</span>
+                        </button>
+
+                        <button type="button" class="video-sound-btn">
+                            <span class="material-symbols-rounded">volume_up</span>
+                        </button>
+
+                        <input
+                            type="range"
+                            class="video-progress-range"
+                            value="0"
+                            min="0"
+                            max="0"
+                            step="0.01"
+                        >
+                    </div>
+
+                    <div class="post-bottom-overlay">
+                        {% if post.description %}
+                        <div class="post-description">
+                            <b>@{{ post.author.username }}</b>
+                            <span>{{ post.formatted_description|safe }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="post-meta-line">
+                            <span class="material-symbols-rounded">play_arrow</span>
+                            <small>{{ post.views }} просмотров</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="post-actions-side">
+
+                    <form method="post" action="{% url 'toggle_like' post.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="action-btn {% if post.is_liked %}liked{% endif %}">
+                            <span class="material-symbols-rounded">favorite</span>
+                            <small>{{ post.likes_count }}</small>
+                        </button>
+                    </form>
+
+                    <div class="action-btn static">
+                        <span class="material-symbols-rounded">visibility</span>
+                        <small id="views-{{ post.id }}">{{ post.views }}</small>
+                    </div>
+
+                    <button type="button" class="action-btn" onclick="openComments('{{ post.id }}')">
+                        <span class="material-symbols-rounded">chat_bubble</span>
+                        <small id="comments-count-{{ post.id }}">{{ post.comments_count }}</small>
+                    </button>
+
+                    <button type="button" class="action-btn">
+                        <span class="material-symbols-rounded">send</span>
+                        <small>Share</small>
+                    </button>
+
+                    <form method="post" action="{% url 'toggle_save_post' post.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="action-btn {% if post.is_saved %}saved{% endif %}">
+                            <span class="material-symbols-rounded">bookmark</span>
+                            <small>
+                                {% if post.is_saved %}
+                                    Saved
+                                {% else %}
+                                    Save
+                                {% endif %}
+                            </small>
+                        </button>
+                    </form>
+
+                </div>
+
+                <aside class="comments-drawer" id="comments-{{ post.id }}">
+                    <div class="comments-drawer-header">
+                        <div>
+                            <h3>Комментарии</h3>
+                            <span>{{ post.comments_count }} всего</span>
+                        </div>
+
+                        <button type="button" onclick="closeComments('{{ post.id }}')">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </div>
+
+                    <div class="comments-drawer-list" id="comments-list-{{ post.id }}">
+                        {% for comment in post.last_comments %}
+                        <div class="post-comment">
+                            <b>@{{ comment.author.username }}</b>
+                            <span>{{ comment.text }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="no-comments">Комментариев пока нет.</p>
+                        {% endfor %}
+                    </div>
+
+                    <form
+                        method="post"
+                        action="{% url 'add_comment' post.id %}"
+                        class="comment-form drawer-comment-form"
+                        onsubmit="sendComment(event, '{{ post.id }}')"
+                    >
+                        {% csrf_token %}
+
+                        <input
+                            type="text"
+                            name="text"
+                            placeholder="Написать комментарий..."
+                            autocomplete="off"
+                        >
+
+                        <button type="submit">
+                            <span class="material-symbols-rounded">arrow_upward</span>
+                        </button>
+                    </form>
+                </aside>
+
+            </div>
+
+        </article>
+        {% endfor %}
+
+    </div>
+    {% else %}
+
+    <div class="feed-empty-card">
+        <span class="material-symbols-rounded">dynamic_feed</span>
+        <h3>Пока ничего нет</h3>
+        <p>Создай первый пост с видео.</p>
+
+        <a href="{% url 'create_post' %}" class="home-btn primary">
+            Создать пост
+        </a>
+    </div>
+
 {% endif %}
+
+    </main>
+</div>
+
+</section>
+
+{% endif %}
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const videos = document.querySelectorAll(".post-video");
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+
+            if (entry.isIntersecting) {
+                videos.forEach(other => {
+                    if (other !== video) other.pause();
+                });
+
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+            }
+        });
+    }, { threshold: 0.65 });
+
+    videos.forEach(video => observer.observe(video));
+
+    document.querySelectorAll(".custom-video-player").forEach(player => {
+        const video = player.querySelector(".post-video");
+        const button = player.querySelector(".video-play-btn");
+        const icon = button.querySelector("span");
+        const soundBtn = player.querySelector(".video-sound-btn");
+        const soundIcon = soundBtn.querySelector("span");
+        const progress = player.querySelector(".video-progress-range");
+
+        let isSeeking = false;
+
+        function updateButton() {
+            icon.textContent = video.paused ? "play_arrow" : "pause";
+            button.classList.toggle("visible", video.paused);
+        }
+
+        function updateSoundIcon() {
+            soundIcon.textContent = video.muted ? "volume_off" : "volume_up";
+        }
+
+        function toggleVideo() {
+            video.paused ? video.play().catch(() => {}) : video.pause();
+        }
+
+        video.addEventListener("click", e => {
+            e.stopPropagation();
+            toggleVideo();
+        });
+
+        button.addEventListener("click", e => {
+            e.stopPropagation();
+            toggleVideo();
+        });
+
+        soundBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            video.muted = !video.muted;
+            updateSoundIcon();
+        });
+
+        ["click", "pointerdown", "pointermove", "pointerup", "input"].forEach(name => {
+            progress.addEventListener(name, e => e.stopPropagation());
+        });
+
+        progress.addEventListener("pointerdown", () => isSeeking = true);
+        progress.addEventListener("pointerup", () => isSeeking = false);
+
+        video.addEventListener("loadedmetadata", () => {
+            progress.max = video.duration;
+
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+
+            if (!videoWidth || !videoHeight) return;
+
+            const ratio = videoWidth / videoHeight;
+
+            let maxWidth = 620;
+            let maxHeight = Math.min(760, window.innerHeight - 150);
+
+            if (window.innerWidth < 900) {
+                maxWidth = Math.min(window.innerWidth - 32, 620);
+                maxHeight = Math.min(720, window.innerHeight - 140);
+            }
+
+            let playerWidth = maxWidth;
+            let playerHeight = playerWidth / ratio;
+
+            if (playerHeight > maxHeight) {
+                playerHeight = maxHeight;
+                playerWidth = playerHeight * ratio;
+            }
+
+            playerWidth = Math.max(playerWidth, 320);
+            playerHeight = Math.max(playerHeight, 260);
+
+            player.style.setProperty("--player-width", `${playerWidth}px`);
+            player.style.setProperty("--player-height", `${playerHeight}px`);
+        });
+
+        progress.addEventListener("input", () => {
+            video.currentTime = Number(progress.value);
+        });
+
+        video.addEventListener("timeupdate", () => {
+            if (!isSeeking) progress.value = video.currentTime;
+        });
+
+        video.addEventListener("play", updateButton);
+        video.addEventListener("pause", updateButton);
+
+        video.muted = false;
+        updateButton();
+        updateSoundIcon();
+    });
+});
+
+function openComments(postId) {
+    const drawer = document.getElementById(`comments-${postId}`);
+    if (!drawer) return;
+
+    const wrap = drawer.closest(".post-video-wrap");
+
+    drawer.classList.add("active");
+    if (wrap) wrap.classList.add("comments-open");
+}
+
+function closeComments(postId) {
+    const drawer = document.getElementById(`comments-${postId}`);
+    if (!drawer) return;
+
+    const wrap = drawer.closest(".post-video-wrap");
+
+    drawer.classList.remove("active");
+    if (wrap) wrap.classList.remove("comments-open");
+}
+
+function sendComment(event, postId) {
+    event.preventDefault();
+
+    const form = event.target;
+    const input = form.querySelector("input[name='text']");
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) return;
+
+        const list = document.getElementById(`comments-list-${postId}`);
+        const counter = document.getElementById(`comments-count-${postId}`);
+        const emptyText = list.querySelector(".no-comments");
+
+        if (emptyText) emptyText.remove();
+
+        const comment = document.createElement("div");
+        comment.className = "post-comment";
+        comment.innerHTML = `
+            <b>@${data.username}</b>
+            <span>${data.text}</span>
+        `;
+
+        list.prepend(comment);
+
+        if (counter) counter.textContent = data.comments_count;
+
+        input.value = "";
+    });
+}
+</script>
 
 {% endblock %}

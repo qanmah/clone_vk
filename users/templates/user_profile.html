@@ -2,152 +2,160 @@
 
 {% block content %}
 
-<h1>Профиль {{ profile_user.username }}</h1>
-{% if profile_user.profile.avatar %}
-    <img src="{{ profile_user.profile.avatar.url }}" width="150">
-{% else %}
-    <img src="/media/avatars/default.jpg" width="150">
-{% endif %}
-<p>{{ profile_user.profile.bio }}</p>
+<div class="profile-page">
 
-{% if request.user == profile_user %}
-    <a href="{% url 'edit_profile' %}">Редактировать профиль</a>
-{% endif %}
+    <div class="profile-card">
 
-<p>
-    <span onclick="openFollowers()" style="cursor:pointer;">
-        👥 {{ followers|length }} Подписчики
-    </span>
-    |
-    <span onclick="openFollowing()" style="cursor:pointer;">
-        ➡️ {{ followings|length }} Подписки
-    </span>
-</p>
+        <div class="profile-cover"></div>
 
-<!-- затемнение -->
-<div id="overlay" onclick="closeModal()" style="
-    display:none;
-    position:fixed;
-    top:0; left:0;
-    width:100%; height:100%;
-    background:rgba(0,0,0,0.5);
-"></div>
+        <div class="profile-main">
+            <div class="profile-avatar-wrap">
+                {% if profile_user.profile.avatar %}
+                    <img src="{{ profile_user.profile.avatar.url }}" class="profile-avatar">
+                {% else %}
+                    <img src="/media/avatars/default.jpg" class="profile-avatar">
+                {% endif %}
+            </div>
 
-<!-- окно -->
-<div id="modal" style="
-    display:none;
-    position:fixed;
-    top:50%; left:50%;
-    transform:translate(-50%, -50%);
-    width:300px;
-    max-height:400px;
-    overflow-y:auto;
-    background:white;
-    padding:20px;
-    border-radius:10px;
-">
+            <div class="profile-info">
+                <h1>{{ profile_user.username }}</h1>
 
-    <div style="text-align:right;">
-        <span onclick="closeModal()" style="cursor:pointer;">❌</span>
-    </div>
+                {% if profile_user.profile.bio %}
+                    <p class="profile-bio">{{ profile_user.profile.bio }}</p>
+                {% else %}
+                    <p class="profile-bio muted">Пользователь пока ничего о себе не рассказал.</p>
+                {% endif %}
+            </div>
 
-    <div id="modal-content">
-        <!-- сюда будет вставляться список -->
+            <div class="profile-actions">
+                {% if request.user == profile_user %}
+                    <a href="{% url 'edit_profile' %}" class="profile-btn primary">
+                        <span class="material-symbols-rounded">edit</span>
+                        Редактировать
+                    </a>
+                {% else %}
+
+                    {% if is_friend %}
+                        <div class="profile-status success">👥 Вы друзья</div>
+
+                        <a href="{% url 'unfollow' profile_user.username %}" class="profile-btn danger">
+                            Отписаться
+                        </a>
+
+                    {% elif following %}
+                        <div class="profile-status">📨 Вы подписаны</div>
+
+                        <a href="{% url 'unfollow' profile_user.username %}" class="profile-btn danger">
+                            Отписаться
+                        </a>
+
+                    {% elif follower_back %}
+                        <div class="profile-status">👀 На вас подписаны</div>
+
+                        <a href="{% url 'send_friend_request' profile_user.username %}" class="profile-btn primary">
+                            Подписаться в ответ
+                        </a>
+
+                    {% else %}
+                        <a href="{% url 'send_friend_request' profile_user.username %}" class="profile-btn primary">
+                            <span class="material-symbols-rounded">person_add</span>
+                            Подписаться
+                        </a>
+                    {% endif %}
+
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="profile-stats">
+            <button onclick="openFollowers()" class="stat-card">
+                <span class="stat-number">{{ followers|length }}</span>
+                <span class="stat-label">Подписчики</span>
+            </button>
+
+            <button onclick="openFollowing()" class="stat-card">
+                <span class="stat-number">{{ followings|length }}</span>
+                <span class="stat-label">Подписки</span>
+            </button>
+        </div>
+
     </div>
 
 </div>
 
-<div id="followers-data" style="display:none;">
-    {% for f in followers %}
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+<div id="profile-overlay" class="profile-overlay" onclick="closeModal()"></div>
 
+<div id="profile-modal" class="profile-modal">
+    <div class="profile-modal-head">
+        <h3 id="profile-modal-title">Список</h3>
+
+        <button onclick="closeModal()" class="profile-modal-close">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+    </div>
+
+    <div id="modal-content" class="profile-modal-content"></div>
+</div>
+
+<div id="followers-data" class="hidden-data">
+    {% for f in followers %}
+        <div class="user-list-item">
             {% if f.from_user.profile.avatar %}
-                <img src="{{ f.from_user.profile.avatar.url }}" width="30" height="30" style="border-radius:50%;">
+                <img src="{{ f.from_user.profile.avatar.url }}" class="user-list-avatar">
             {% else %}
-                <img src="/media/avatars/default.jpg" width="30" height="30" style="border-radius:50%;">
+                <img src="/media/avatars/default.jpg" class="user-list-avatar">
             {% endif %}
 
             <a href="/profile/{{ f.from_user.username }}">
                 {{ f.from_user.username }}
             </a>
-
         </div>
     {% empty %}
-        <p>Никто не подписан</p>
+        <p class="empty-list">Никто не подписан</p>
     {% endfor %}
 </div>
 
-<div id="following-data" style="display:none;">
+<div id="following-data" class="hidden-data">
     {% for f in followings %}
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-
+        <div class="user-list-item">
             {% if f.to_user.profile.avatar %}
-                <img src="{{ f.to_user.profile.avatar.url }}" width="30" height="30" style="border-radius:50%;">
+                <img src="{{ f.to_user.profile.avatar.url }}" class="user-list-avatar">
             {% else %}
-                <img src="/media/avatars/default.jpg" width="30" height="30" style="border-radius:50%;">
+                <img src="/media/avatars/default.jpg" class="user-list-avatar">
             {% endif %}
 
             <a href="/profile/{{ f.to_user.username }}">
                 {{ f.to_user.username }}
             </a>
-
         </div>
     {% empty %}
-        <p>Ни на кого не подписан</p>
+        <p class="empty-list">Ни на кого не подписан</p>
     {% endfor %}
 </div>
 
-{% if request.user != profile_user %}
-
-    {% if is_friend %}
-        <p>👥 Вы взаимно подписаны</p>
-
-        <a href="{% url 'unfollow' profile_user.username %}">
-            ❌ Отписаться
-        </a>
-
-    {% elif following %}
-        <p>📨 Вы подписаны</p>
-
-        <a href="{% url 'unfollow' profile_user.username %}">
-            ❌ Отписаться
-        </a>
-
-    {% elif follower_back %}
-        <p>👀 На вас подписаны</p>
-
-        <a href="{% url 'send_friend_request' profile_user.username %}">
-            ➕ Подписаться в ответ
-        </a>
-
-    {% else %}
-        <a href="{% url 'send_friend_request' profile_user.username %}">
-            ➕ Подписаться
-        </a>
-    {% endif %}
-
-{% endif %}
-
 <script>
 function openFollowers() {
-    document.getElementById("modal").style.display = "block";
-    document.getElementById("overlay").style.display = "block";
+    document.getElementById("profile-modal-title").textContent = "Подписчики";
+    document.getElementById("profile-modal").classList.add("active");
+    document.getElementById("profile-overlay").classList.add("active");
 
     document.getElementById("modal-content").innerHTML =
         document.getElementById("followers-data").innerHTML;
 }
 
 function openFollowing() {
-    document.getElementById("modal").style.display = "block";
-    document.getElementById("overlay").style.display = "block";
+    document.getElementById("profile-modal-title").textContent = "Подписки";
+    document.getElementById("profile-modal").classList.add("active");
+    document.getElementById("profile-overlay").classList.add("active");
 
     document.getElementById("modal-content").innerHTML =
         document.getElementById("following-data").innerHTML;
 }
 
 function closeModal() {
-    document.getElementById("modal").style.display = "none";
-    document.getElementById("overlay").style.display = "none";
+    document.getElementById("profile-modal").classList.remove("active");
+    document.getElementById("profile-overlay").classList.remove("active");
 }
 </script>
+
 {% endblock %}
