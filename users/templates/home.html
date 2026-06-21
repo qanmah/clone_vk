@@ -12,21 +12,74 @@
     <span class="ambient-particles"></span>
 </div>
 {% if not user.is_authenticated %}
-    <section class="home-hero">
-        <div class="home-hero-content">
-            <div class="home-badge">НОВОЕ СОЦИАЛЬНОЕ ПРОСТРАНСТВО</div>
-            <h1>Смотри.<br>Создавай.<br>Общайся.</h1>
-            <p>Видео, публикации, комментарии и друзья в одном месте.</p>
-            <div class="home-actions">
-                <a href="{% url 'register' %}" class="home-btn primary">Создать аккаунт</a>
-                <a href="{% url 'login' %}" class="home-btn secondary">Войти</a>
+    <div class="guest-home">
+        <section class="home-hero guest-hero">
+            <div class="home-hero-content guest-hero-copy">
+                <div class="guest-brand"><span>V</span><b>Veyra</b></div>
+                <div class="home-badge"><i></i> Твоё пространство начинается здесь</div>
+                <h1>Будь ближе.<br><em>Делись настоящим.</em></h1>
+                <p>Фото, видео, друзья и живые разговоры — всё важное собрано в одном красивом пространстве.</p>
+                <div class="home-actions">
+                    <a href="{% url 'register' %}" class="home-btn primary"><span class="material-symbols-rounded">arrow_forward</span>Начать бесплатно</a>
+                    <a href="{% url 'login' %}" class="home-btn secondary"><span class="material-symbols-rounded">login</span>У меня есть аккаунт</a>
+                </div>
+                <div class="guest-trust-row">
+                    <span><span class="material-symbols-rounded">verified_user</span>Ты управляешь приватностью</span>
+                    <span><span class="material-symbols-rounded">all_inclusive</span>Без лишних ограничений</span>
+                </div>
             </div>
-        </div>
-        <div class="home-preview-card">
-            <div class="preview-header"><div class="preview-avatar"></div><b>@username</b></div>
-            <div class="preview-video"></div>
-        </div>
-    </section>
+            <div class="home-preview-card guest-preview">
+                <div class="guest-preview-top">
+                    <span class="guest-window-dots"><i></i><i></i><i></i></span>
+                    <b>Лента Veyra</b>
+                    <span class="material-symbols-rounded">more_horiz</span>
+                </div>
+                <div class="guest-stories">
+                    <span class="guest-story add"><i><span class="material-symbols-rounded">add</span></i><small>Ты</small></span>
+                    <span class="guest-story"><i></i><small>alina</small></span>
+                    <span class="guest-story"><i></i><small>max</small></span>
+                    <span class="guest-story"><i></i><small>vika</small></span>
+                </div>
+                <div class="guest-post-demo">
+                    <header><span class="guest-demo-avatar"></span><span><b>@veyraday</b><small>только что</small></span><span class="material-symbols-rounded">more_horiz</span></header>
+                    <div class="guest-demo-media">
+                        <span class="guest-demo-glass"><span class="material-symbols-rounded">auto_awesome</span><b>Моменты, которые хочется запомнить</b></span>
+                        <i class="guest-sun"></i><i class="guest-hill hill-one"></i><i class="guest-hill hill-two"></i>
+                    </div>
+                    <footer>
+                        <span><span class="material-symbols-rounded">favorite</span><b>2.4K</b></span>
+                        <span><span class="material-symbols-rounded">chat_bubble</span><b>184</b></span>
+                        <span><span class="material-symbols-rounded">bookmark</span></span>
+                        <span><span class="material-symbols-rounded">share</span></span>
+                    </footer>
+                </div>
+                <span class="guest-float-card float-like"><span class="material-symbols-rounded">favorite</span><b>Новые реакции</b><small>прямо сейчас</small></span>
+                <span class="guest-float-card float-chat"><span class="material-symbols-rounded">forum</span><b>Друзья рядом</b><small>7 в сети</small></span>
+            </div>
+        </section>
+
+        <section class="guest-stats" aria-label="Возможности Veyra">
+            <div><b>Одна лента</b><span>для фото и видео</span></div>
+            <div><b>Живые чаты</b><span>с теми, кто важен</span></div>
+            <div><b>Твой профиль</b><span>в твоём стиле</span></div>
+            <div><b>Полный контроль</b><span>над публикациями</span></div>
+        </section>
+
+        <section class="guest-features">
+            <header><span>Всё необходимое</span><h2>Социальная сеть без лишнего шума</h2><p>Создавай, общайся и находи близких по духу людей.</p></header>
+            <div class="guest-feature-grid">
+                <article><span class="material-symbols-rounded">smart_display</span><div><b>Живая лента</b><p>Смотри видео и фотографии в удобном формате, реагируй и сохраняй любимое.</p></div></article>
+                <article><span class="material-symbols-rounded">forum</span><div><b>Личные разговоры</b><p>Отправляй сообщения и делись публикациями с друзьями прямо в чате.</p></div></article>
+                <article><span class="material-symbols-rounded">manage_accounts</span><div><b>Твоё пространство</b><p>Настраивай профиль и сам решай, кто увидит опубликованные моменты.</p></div></article>
+            </div>
+        </section>
+
+        <section class="guest-cta">
+            <span class="material-symbols-rounded">auto_awesome</span>
+            <div><small>Добро пожаловать в Veyra</small><h2>Здесь уже есть место для тебя.</h2></div>
+            <a href="{% url 'register' %}" class="home-btn primary">Создать профиль<span class="material-symbols-rounded">arrow_forward</span></a>
+        </section>
+    </div>
 {% else %}
     {% if active_feed == 'all' %}
     <section class="home-welcome">
