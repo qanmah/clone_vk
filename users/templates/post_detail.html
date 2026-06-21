@@ -1,65 +1,311 @@
 {% extends 'base.html' %}
+{% block title %}Publication{% endblock %}
 
 {% block content %}
+<div class="video-detail-page">
+    <a href="{% url 'home' %}#feed" class="video-detail-back">
+        <span class="material-symbols-rounded">arrow_back</span>
+        Назад в ленту
+    </a>
 
-<div class="post-detail-page">
-
-    <div class="post-detail-card">
-
-        <div class="post-detail-video">
-            <video controls>
-                <source src="{{ post.video.url }}">
-            </video>
-        </div>
-
-        <div class="post-detail-info">
-
-            <a href="{% url 'home' %}" class="back-link">
-                ← Назад в ленту
-            </a>
-
-            <h2>@{{ post.author.username }}</h2>
-
-            {% if post.description %}
-                <p class="post-description">
-                    {{ post.description }}
-                </p>
+    <div class="video-detail-layout">
+        <main class="video-detail-main">
+            {% if post.video %}
+            <div class="video-detail-player">
+                <video controls autoplay playsinline>
+                    <source src="{{ post.video.url }}">
+                </video>
+            </div>
+            {% else %}
+            <div class="post-gallery detail-gallery" data-gallery>
+                <div class="post-gallery-track">
+                    {% for photo in post.images.all %}
+                        <div class="post-gallery-slide"><img src="{{ photo.image.url }}" alt="Фотография {{ forloop.counter }}"></div>
+                    {% endfor %}
+                </div>
+                {% if post.images.all|length > 1 %}
+                    <button type="button" class="gallery-arrow prev" data-gallery-prev><span class="material-symbols-rounded">chevron_left</span></button>
+                    <button type="button" class="gallery-arrow next" data-gallery-next><span class="material-symbols-rounded">chevron_right</span></button>
+                    <div class="gallery-dots">{% for photo in post.images.all %}<button type="button" class="{% if forloop.first %}active{% endif %}" data-gallery-dot="{{ forloop.counter0 }}"></button>{% endfor %}</div>
+                    <span class="gallery-count"><b>1</b>/{{ post.images.all|length }}</span>
+                {% endif %}
+                {% if post.audio %}
+                    <audio controls loop class="detail-gallery-audio"><source src="{{ post.audio.url }}"></audio>
+                {% endif %}
+            </div>
             {% endif %}
 
-            <h3>Комментарии</h3>
+            <section class="video-detail-card">
+                <div class="video-detail-author-row">
+                    <a href="{% url 'user_profile' post.author.username %}" class="video-detail-author">
+                        <div class="detail-avatar">
+                            {% if post.author.profile.avatar %}
+                                <img src="{{ post.author.profile.avatar.url }}" alt="">
+                            {% else %}
+                                {{ post.author.username|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <b>@{{ post.author.username }}</b>
+                            <span>{{ post.relative_created_at }}</span>
+                        </div>
+                    </a>
+                    <span class="detail-visibility"><span class="material-symbols-rounded">public</span>{{ post.get_visibility_display }}</span>
+                </div>
 
-            <form method="post" action="{% url 'add_comment' post.id %}" class="comment-form detail-comment-form">
-                {% csrf_token %}
+                {% if post.description %}<p class="video-detail-description">{{ post.formatted_description|safe }}</p>{% endif %}
 
-                <input
-                    type="text"
-                    name="text"
-                    placeholder="Написать комментарий..."
-                    autocomplete="off"
-                >
+                <div class="video-detail-stats">
+                    <span><span class="material-symbols-rounded">visibility</span>{{ post.views }} просмотров</span>
+                    <span><span class="material-symbols-rounded">favorite</span><b id="detail-likes-count">{{ post.likes_count }}</b></span>
+                    <span><span class="material-symbols-rounded">chat_bubble</span><b id="detail-comments-count">{{ post.comments_count }}</b></span>
+                </div>
 
-                <button type="submit">
-                    Отправить
-                </button>
-            </form>
+                {% if user.is_authenticated %}
+                <div class="video-detail-actions">
+                    <form method="post" action="{% url 'toggle_like' post.id %}" class="detail-ajax-action" data-kind="like">
+                        {% csrf_token %}
+                        <button class="{% if post.is_liked %}liked{% endif %}"><span class="material-symbols-rounded">favorite</span><b>{% if post.is_liked %}Понравилось{% else %}Нравится{% endif %}</b></button>
+                    </form>
+                    <form method="post" action="{% url 'toggle_save_post' post.id %}" class="detail-ajax-action" data-kind="save">
+                        {% csrf_token %}
+                        <button class="{% if post.is_saved %}saved{% endif %}"><span class="material-symbols-rounded">bookmark</span><b>{% if post.is_saved %}Сохранено{% else %}Сохранить{% endif %}</b></button>
+                    </form>
+                    <button type="button" class="share-post-btn" data-post-id="{{ post.id }}"><span class="material-symbols-rounded">send</span><b>Поделиться</b></button>
+                </div>
+                {% endif %}
+            </section>
+        </main>
+
+        <aside class="video-detail-comments">
+            <div class="detail-comments-heading">
+                <div><span>Обсуждение</span><h2>Комментарии</h2></div>
+                <b>{{ post.comments_count }}</b>
+            </div>
 
             <div class="detail-comments-list">
                 {% for comment in comments %}
-                    <div class="post-comment">
-                        <b>@{{ comment.author.username }}</b>
-                        <span>{{ comment.text }}</span>
+                    <div class="detail-comment-thread">
+                    <div class="detail-comment">
+                        <div class="comment-avatar">
+                            {% if comment.author.profile.avatar %}<img src="{{ comment.author.profile.avatar.url }}" alt="">{% else %}{{ comment.author.username|first|upper }}{% endif %}
+                        </div>
+                        <div><b>@{{ comment.author.username }}</b><p>{{ comment.text }}</p></div>
+                    </div>
+                    {% if comment.thread_replies %}
+                        <details class="detail-comment-replies">
+                            <summary><span class="material-symbols-rounded">keyboard_arrow_down</span><b>Ответы</b><small>{{ comment.thread_replies|length }}</small></summary>
+                            <div>
+                                {% for reply in comment.thread_replies %}
+                                    <div class="detail-comment is-reply">
+                                        <div class="comment-avatar">
+                                            {% if reply.author.profile.avatar %}<img src="{{ reply.author.profile.avatar.url }}" alt="">{% else %}{{ reply.author.username|first|upper }}{% endif %}
+                                        </div>
+                                        <div><small>Ответ для @{{ reply.parent.author.username }}</small><b>@{{ reply.author.username }}</b><p>{{ reply.text }}</p></div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% endif %}
                     </div>
                 {% empty %}
-                    <p class="no-comments">
-                        Комментариев пока нет.
-                    </p>
+                    <div class="detail-comments-empty"><span class="material-symbols-rounded">chat_bubble</span><p>Начни обсуждение первым.</p></div>
                 {% endfor %}
             </div>
 
-        </div>
-
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'add_comment' post.id %}" class="detail-comment-form" id="detail-comment-form">
+                {% csrf_token %}
+                <div class="comment-avatar">
+                    {% if user.profile.avatar %}<img src="{{ user.profile.avatar.url }}" alt="">{% else %}{{ user.username|first|upper }}{% endif %}
+                </div>
+                <input type="text" name="text" maxlength="1000" placeholder="Написать комментарий..." autocomplete="off">
+                <button type="submit"><span class="material-symbols-rounded">send</span></button>
+            </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="detail-login-link">Войдите, чтобы оставить комментарий</a>
+            {% endif %}
+        </aside>
     </div>
-
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-gallery]").forEach(gallery => {
+        const track = gallery.querySelector(".post-gallery-track");
+        const slides = [...gallery.querySelectorAll(".post-gallery-slide")];
+        const dots = [...gallery.querySelectorAll("[data-gallery-dot]")];
+        const count = gallery.querySelector(".gallery-count b");
+        const previous = gallery.querySelector("[data-gallery-prev]");
+        const next = gallery.querySelector("[data-gallery-next]");
+        let current = 0;
+        let programmaticScroll = false;
+        let scrollAnimationFrame;
+        let galleryTimer;
+        const slideWidth = () => Math.max(1, track.clientWidth || gallery.clientWidth);
+        const updateUi = () => {
+            dots.forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === current));
+            if (count) count.textContent = current + 1;
+            if (previous) previous.disabled = current === 0;
+            if (next) next.disabled = current === slides.length - 1;
+        };
+        const syncFromScroll = () => {
+            current = Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / slideWidth())));
+            updateUi();
+        };
+        const goTo = (index, smooth = true, startOverride = null) => {
+            current = Math.max(0, Math.min(slides.length - 1, index));
+            updateUi();
+            window.cancelAnimationFrame(scrollAnimationFrame);
+            programmaticScroll = true;
+            const targetLeft = current * slideWidth();
+            if (!smooth) {
+                track.classList.remove("is-settling");
+                track.scrollLeft = targetLeft;
+                programmaticScroll = false;
+                syncFromScroll();
+                return;
+            }
+            const startLeft = startOverride ?? track.scrollLeft;
+            track.scrollLeft = startLeft;
+            const distance = targetLeft - startLeft;
+            const duration = Math.min(520, Math.max(280, 240 + Math.abs(distance) / slideWidth() * 280));
+            const startedAt = performance.now();
+            track.classList.add("is-settling");
+            const animate = now => {
+                const progress = Math.min(1, (now - startedAt) / duration);
+                const eased = progress < .5
+                    ? 4 * progress * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                track.scrollLeft = startLeft + distance * eased;
+                if (progress < 1) {
+                    scrollAnimationFrame = window.requestAnimationFrame(animate);
+                } else {
+                    track.scrollLeft = targetLeft;
+                    track.classList.remove("is-settling");
+                    programmaticScroll = false;
+                    syncFromScroll();
+                }
+            };
+            scrollAnimationFrame = window.requestAnimationFrame(animate);
+        };
+        previous?.addEventListener("click", event => { event.stopPropagation(); goTo(current - 1); });
+        next?.addEventListener("click", event => { event.stopPropagation(); goTo(current + 1); });
+        dots.forEach(dot => dot.addEventListener("click", () => goTo(Number(dot.dataset.galleryDot))));
+        let mouseDragging = false;
+        let dragPointerId = null;
+        let dragStartX = 0;
+        let dragStartScroll = 0;
+        let dragBaseIndex = 0;
+        track.querySelectorAll("img").forEach(image => image.draggable = false);
+        track.addEventListener("dragstart", event => event.preventDefault());
+        track.addEventListener("touchstart", () => {
+            window.cancelAnimationFrame(scrollAnimationFrame);
+            track.classList.remove("is-settling");
+            programmaticScroll = false;
+        }, {passive: true});
+        track.addEventListener("pointerdown", event => {
+            if (event.pointerType !== "mouse" || event.button !== 0) return;
+            window.cancelAnimationFrame(scrollAnimationFrame);
+            track.classList.remove("is-settling");
+            programmaticScroll = false;
+            mouseDragging = true;
+            dragPointerId = event.pointerId;
+            dragStartX = event.clientX;
+            dragStartScroll = track.scrollLeft;
+            dragBaseIndex = Math.round(dragStartScroll / slideWidth());
+            track.setPointerCapture(event.pointerId);
+            track.classList.add("is-mouse-dragging");
+            event.preventDefault();
+        });
+        track.addEventListener("pointermove", event => {
+            if (!mouseDragging || event.pointerId !== dragPointerId) return;
+            track.scrollLeft = dragStartScroll - (event.clientX - dragStartX);
+            event.preventDefault();
+        });
+        const finishMouseDrag = (event, cancelled = false) => {
+            if (!mouseDragging || event.pointerId !== dragPointerId) return;
+            const distance = event.clientX - dragStartX;
+            const releaseLeft = track.scrollLeft;
+            const threshold = slideWidth() * .18;
+            let target = dragBaseIndex;
+            if (!cancelled && Math.abs(distance) >= threshold) target = dragBaseIndex + (distance < 0 ? 1 : -1);
+            mouseDragging = false;
+            dragPointerId = null;
+            track.classList.add("is-settling");
+            track.classList.remove("is-mouse-dragging");
+            track.scrollLeft = releaseLeft;
+            goTo(cancelled ? dragBaseIndex : target, true, releaseLeft);
+        };
+        track.addEventListener("pointerup", event => finishMouseDrag(event));
+        track.addEventListener("pointercancel", event => finishMouseDrag(event, true));
+        track.addEventListener("scroll", () => {
+            if (programmaticScroll || mouseDragging) return;
+            clearTimeout(galleryTimer);
+            galleryTimer = setTimeout(syncFromScroll, 70);
+        });
+        new ResizeObserver(() => goTo(current, false)).observe(track);
+        updateUi();
+    });
+
+    document.querySelectorAll(".detail-ajax-action").forEach(form => {
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+            const response = await fetch(form.action, {
+                method: "POST",
+                body: new FormData(form),
+                headers: {"X-Requested-With": "XMLHttpRequest"}
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            const button = form.querySelector("button");
+            const label = button.querySelector("b");
+            if (form.dataset.kind === "like") {
+                button.classList.toggle("liked", data.is_liked);
+                label.textContent = data.is_liked ? "Понравилось" : "Нравится";
+                document.getElementById("detail-likes-count").textContent = data.likes_count;
+            } else {
+                button.classList.toggle("saved", data.is_saved);
+                label.textContent = data.is_saved ? "Сохранено" : "Сохранить";
+            }
+        });
+    });
+
+    const commentForm = document.getElementById("detail-comment-form");
+    commentForm?.addEventListener("submit", async event => {
+        event.preventDefault();
+        const input = commentForm.querySelector("input[name='text']");
+        if (!input.value.trim()) return;
+        const response = await fetch(commentForm.action, {
+            method: "POST",
+            body: new FormData(commentForm),
+            headers: {"X-Requested-With": "XMLHttpRequest"}
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        const list = document.querySelector(".detail-comments-list");
+        list.querySelector(".detail-comments-empty")?.remove();
+        const item = document.createElement("div");
+        const avatar = document.createElement("div");
+        const copy = document.createElement("div");
+        const author = document.createElement("b");
+        const text = document.createElement("p");
+        item.className = "detail-comment";
+        avatar.className = "comment-avatar";
+        if (data.avatar) {
+            const image = document.createElement("img");
+            image.src = data.avatar;
+            avatar.append(image);
+        } else avatar.textContent = data.username.charAt(0).toUpperCase();
+        author.textContent = `@${data.username}`;
+        text.textContent = data.text;
+        copy.append(author, text);
+        item.append(avatar, copy);
+        list.prepend(item);
+        document.getElementById("detail-comments-count").textContent = data.comments_count;
+        document.querySelector(".detail-comments-heading > b").textContent = data.comments_count;
+        commentForm.reset();
+    });
+});
+</script>
 {% endblock %}

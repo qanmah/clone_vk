@@ -1,433 +1,901 @@
 {% extends 'base.html' %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
-
 <div class="home-page">
-
+    <div class="feed-nav-dim" aria-hidden="true"></div>
+    <div class="ambient-effects" aria-hidden="true">
+    <span class="ambient-ring ring-one"></span>
+    <span class="ambient-ring ring-two"></span>
+    <span class="ambient-beam beam-one"></span>
+    <span class="ambient-beam beam-two"></span>
+    <span class="ambient-particles"></span>
+</div>
 {% if not user.is_authenticated %}
-
-<section class="home-hero">
-    <div class="home-hero-content">
-        <div class="home-badge">NEW SOCIAL PLATFORM</div>
-
-        <h1>Смотри.<br>Создавай.<br>Залипай.</h1>
-
-        <p>
-            Современная лента с видео, постами, комментариями,
-            лайками и красивым интерфейсом.
-        </p>
-
-        <div class="home-actions">
-            <a href="/register/" class="home-btn primary">Создать аккаунт</a>
-            <a href="/login/" class="home-btn secondary">Войти</a>
-        </div>
-    </div>
-
-    <div class="home-preview-card">
-        <div class="preview-header">
-            <div class="preview-avatar"></div>
-            <div>
-                <div class="preview-name">@username</div>
-                <div class="preview-time">online</div>
+    <section class="home-hero">
+        <div class="home-hero-content">
+            <div class="home-badge">НОВОЕ СОЦИАЛЬНОЕ ПРОСТРАНСТВО</div>
+            <h1>Смотри.<br>Создавай.<br>Общайся.</h1>
+            <p>Видео, публикации, комментарии и друзья в одном месте.</p>
+            <div class="home-actions">
+                <a href="{% url 'register' %}" class="home-btn primary">Создать аккаунт</a>
+                <a href="{% url 'login' %}" class="home-btn secondary">Войти</a>
             </div>
         </div>
-
-        <div class="preview-video"></div>
-
-        <div class="preview-actions">
-            <span class="material-symbols-rounded">favorite</span>
-            <span class="material-symbols-rounded">chat_bubble</span>
-            <span class="material-symbols-rounded">bookmark</span>
+        <div class="home-preview-card">
+            <div class="preview-header"><div class="preview-avatar"></div><b>@username</b></div>
+            <div class="preview-video"></div>
         </div>
-    </div>
-</section>
-
+    </section>
 {% else %}
+    {% if active_feed == 'all' %}
+    <section class="home-welcome">
+        <div class="home-welcome-copy">
+            <div>
+                <span class="home-welcome-kicker">Твоя главная</span>
+                <h1>Добро пожаловать, {{ user.username }}</h1>
+                <p>Общайся с друзьями, публикуй моменты и находи новое.</p>
+                <div class="home-live-row">
+                    <span><i></i>Друзья сейчас онлайн</span>
+                    <span><span class="material-symbols-rounded">auto_awesome</span>Новые моменты каждый день</span>
+                    <span><span class="material-symbols-rounded">groups</span>Будь ближе к своим</span>
+                </div>
+            </div>
+            <div class="home-welcome-actions">
+                <a href="{% url 'create_post' %}" class="home-btn primary"><span class="material-symbols-rounded">add_circle</span>Новая публикация</a>
+                <a href="#feed-first-post" class="home-btn secondary feed-jump"><span class="material-symbols-rounded">arrow_downward</span>Перейти к ленте</a>
+            </div>
+        </div>
+        <div class="home-feature-grid">
+            <a href="{% url 'chat' %}" class="home-feature-card"><span class="material-symbols-rounded">forum</span><b>Сообщения</b><small>Продолжить общение</small></a>
+            <a href="{% url 'user_profile' user.username %}" class="home-feature-card"><span class="material-symbols-rounded">person</span><b>Моя страница</b><small>Профиль и друзья</small></a>
+            <a href="{% url 'home' %}?feed=following" class="home-feature-card"><span class="material-symbols-rounded">subscriptions</span><b>Подписки</b><small>Видео знакомых</small></a>
+            <a href="{% url 'home' %}?feed=saved" class="home-feature-card"><span class="material-symbols-rounded">bookmark</span><b>Избранное</b><small>Сохранённые публикации</small></a>
+        </div>
+        <div class="home-orb orb-one"></div>
+        <div class="home-orb orb-two"></div>
+        <div class="home-welcome-grid"></div>
+    </section>
 
-<section class="feed-section">
+    <div class="home-feed-divider" aria-hidden="true">
+        <span></span>
+        <div><span class="material-symbols-rounded">dynamic_feed</span>Лента публикаций</div>
+        <span></span>
+    </div>
+    {% endif %}
 
-    <div class="feed-layout">
+    <section class="feed-section" id="feed">
+        {% if active_feed != 'all' %}
+            <header class="feed-category-heading">
+                <span class="material-symbols-rounded">{% if active_feed == 'following' %}subscriptions{% else %}bookmark{% endif %}</span>
+                <div>
+                    <small>Раздел ленты</small>
+                    <h1>{% if active_feed == 'following' %}Подписки{% else %}Избранное{% endif %}</h1>
+                    <p>{% if active_feed == 'following' %}Новые публикации пользователей, на которых ты подписан.{% else %}Публикации, которые ты сохранил для себя.{% endif %}</p>
+                </div>
+            </header>
+        {% endif %}
+        <div class="feed-layout">
+            <aside class="feed-sidebar">
+                <div class="sidebar-title">Навигация</div>
+                <a href="{% url 'home' %}" class="sidebar-link {% if active_feed == 'all' %}active{% endif %}">
+                    <span class="material-symbols-rounded">dynamic_feed</span><span>Вся лента</span>
+                </a>
+                <a href="{% url 'home' %}?feed=following" class="sidebar-link {% if active_feed == 'following' %}active{% endif %}">
+                    <span class="material-symbols-rounded">subscriptions</span><span>Подписки</span>
+                </a>
+                <a href="{% url 'home' %}?feed=saved" class="sidebar-link {% if active_feed == 'saved' %}active{% endif %}">
+                    <span class="material-symbols-rounded">bookmark</span><span>Избранное</span>
+                </a>
+                <a href="{% url 'create_post' %}" class="sidebar-link create">
+                    <span class="material-symbols-rounded">add</span><span>Загрузить</span>
+                </a>
+            </aside>
 
-        <aside class="feed-sidebar">
-
-            <a href="/" class="sidebar-icon active">
-                <span class="material-symbols-rounded">home</span>
-            </a>
-
-            <a href="#" class="sidebar-icon">
-                <span class="material-symbols-rounded">subscriptions</span>
-            </a>
-
-            <a href="#" class="sidebar-icon">
-                <span class="material-symbols-rounded">bookmark</span>
-            </a>
-
-            <a href="{% url 'create_post' %}" class="sidebar-icon create">
-                <span class="material-symbols-rounded">add</span>
-            </a>
-
-        </aside>
-
-        <main class="feed-main">
-
+            <main class="feed-main">
             {% if posts %}
-            <div class="posts-feed">
+                <div class="posts-feed">
+                {% for post in posts %}
+                    <article class="post-card" id="{% if forloop.first %}feed-first-post{% else %}post-{{ post.id }}{% endif %}" data-post-id="{{ post.id }}">
+                        <div class="post-content-card">
+                        <header class="post-card-header">
+                            <a href="{% url 'user_profile' post.author.username %}" class="post-author">
+                                <div class="post-avatar">
+                                    {% if post.author.profile.avatar %}
+                                        <img src="{{ post.author.profile.avatar.url }}" alt="">
+                                    {% else %}
+                                        {{ post.author.username|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="post-author-info">
+                                    <b>@{{ post.author.username }}</b>
+                                    <span>{{ post.relative_created_at }}</span>
+                                </div>
+                            </a>
+                            {% if post.author == user %}
+                                <button type="button" class="post-manage-btn" onclick="toggleManage('{{ post.id }}')" title="Управление видео">
+                                    <span class="material-symbols-rounded">settings</span>
+                                    Управление
+                                </button>
+                            {% else %}
+                                <a href="{% url 'post_detail' post.id %}" class="post-manage-btn">
+                                    <span class="material-symbols-rounded">open_in_new</span>
+                                    Открыть
+                                </a>
+                            {% endif %}
+                        </header>
 
-        {% for post in posts %}
-        <article class="post-card">
-
-            <div class="post-video-wrap">
-
-                <div class="post-main">
-                    <div class="post-top-overlay">
-                        <div class="post-author">
-                            <div class="post-avatar">
-                                {{ post.author.username|first|upper }}
+                        {% if post.author == user %}
+                        <form class="post-manage-panel" id="manage-{{ post.id }}" action="{% url 'manage_post' post.id %}" onsubmit="savePost(event, '{{ post.id }}')">
+                            {% csrf_token %}
+                            <label>Описание
+                                <textarea name="description" maxlength="2000">{{ post.description }}</textarea>
+                            </label>
+                            <label>Кто видит публикацию
+                                <select name="visibility">
+                                    <option value="public" {% if post.visibility == 'public' %}selected{% endif %}>Все</option>
+                                    <option value="followers" {% if post.visibility == 'followers' %}selected{% endif %}>Подписчики</option>
+                                    <option value="private" {% if post.visibility == 'private' %}selected{% endif %}>Только я</option>
+                                </select>
+                            </label>
+                            <div class="manage-actions">
+                                <button type="submit" class="manage-save">Сохранить</button>
+                                <button type="button" class="manage-delete" data-post-id="{{ post.id }}" data-delete-url="{% url 'delete_post' post.id %}">Удалить публикацию</button>
                             </div>
-
-                            <div class="post-author-info">
-                                <b>@{{ post.author.username }}</b>
-                                <span>{{ post.created_at|date:"d.m.Y H:i" }}</span>
-                            </div>
-                        </div>
-
-                        <button type="button" class="post-more-btn">
-                            <span class="material-symbols-rounded">more_horiz</span>
-                        </button>
-                    </div>
-
-                    <div class="custom-video-player">
-                        <video class="post-video" data-post="{{ post.id }}" playsinline loop>
-                            <source src="{{ post.video.url }}">
-                        </video>
-
-                        <button type="button" class="video-play-btn visible">
-                            <span class="material-symbols-rounded">play_arrow</span>
-                        </button>
-
-                        <button type="button" class="video-sound-btn">
-                            <span class="material-symbols-rounded">volume_up</span>
-                        </button>
-
-                        <input
-                            type="range"
-                            class="video-progress-range"
-                            value="0"
-                            min="0"
-                            max="0"
-                            step="0.01"
-                        >
-                    </div>
-
-                    <div class="post-bottom-overlay">
-                        {% if post.description %}
-                        <div class="post-description">
-                            <b>@{{ post.author.username }}</b>
-                            <span>{{ post.formatted_description|safe }}</span>
-                        </div>
+                        </form>
                         {% endif %}
 
-                        <div class="post-meta-line">
-                            <span class="material-symbols-rounded">play_arrow</span>
-                            <small>{{ post.views }} просмотров</small>
+                        <div class="post-media-row">
+                        {% if post.video %}
+                        <div class="custom-video-player">
+                            <video class="post-video" data-post="{{ post.id }}" preload="metadata" playsinline loop>
+                                <source src="{{ post.video.url }}">
+                            </video>
+                            <button type="button" class="video-center-play visible" aria-label="Воспроизвести">
+                                <span class="material-symbols-rounded">play_arrow</span>
+                            </button>
+                            <div class="video-controls">
+                                <button type="button" class="video-control video-toggle"><span class="material-symbols-rounded">play_arrow</span></button>
+                                <input type="range" class="video-progress-range" value="0" min="0" max="0" step="0.01">
+                                <button type="button" class="video-control video-sound"><span class="material-symbols-rounded">volume_off</span></button>
+                                <button type="button" class="video-control video-fullscreen"><span class="material-symbols-rounded">fullscreen</span></button>
+                            </div>
                         </div>
-                    </div>
+                        {% else %}
+                        <div class="post-gallery" data-gallery {% if post.audio %}data-audio-gallery{% endif %}>
+                            <div class="post-gallery-track">
+                                {% for photo in post.images_list %}
+                                    <div class="post-gallery-slide"><img src="{{ photo.image.url }}" alt="Фотография {{ forloop.counter }}" loading="lazy"></div>
+                                {% endfor %}
+                            </div>
+                            {% if post.images_count > 1 %}
+                                <button type="button" class="gallery-arrow prev" data-gallery-prev><span class="material-symbols-rounded">chevron_left</span></button>
+                                <button type="button" class="gallery-arrow next" data-gallery-next><span class="material-symbols-rounded">chevron_right</span></button>
+                                <div class="gallery-dots">
+                                    {% for photo in post.images_list %}<button type="button" class="{% if forloop.first %}active{% endif %}" data-gallery-dot="{{ forloop.counter0 }}"></button>{% endfor %}
+                                </div>
+                                <span class="gallery-count"><b>1</b>/{{ post.images_count }}</span>
+                            {% endif %}
+                            {% if post.audio %}
+                                <audio class="gallery-audio" preload="metadata" loop>
+                                    <source src="{{ post.audio.url }}">
+                                </audio>
+                                <button type="button" class="gallery-sound" aria-label="Включить или выключить звук"><span class="material-symbols-rounded">volume_off</span></button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                            <div class="post-actions post-actions-rail">
+                                <form method="post" action="{% url 'toggle_like' post.id %}" class="ajax-action-form" data-kind="like">
+                                    {% csrf_token %}
+                                    <button type="submit" class="{% if post.is_liked %}liked{% endif %}"><span class="material-symbols-rounded">favorite</span><b>{{ post.likes_count }}</b></button>
+                                </form>
+                                <button type="button" class="comment-toggle" onclick="toggleComments('{{ post.id }}')"><span class="material-symbols-rounded">chat_bubble</span><b id="comments-count-{{ post.id }}">{{ post.comments_count }}</b></button>
+                                <form method="post" action="{% url 'toggle_save_post' post.id %}" class="ajax-action-form" data-kind="save">
+                                    {% csrf_token %}
+                                    <button type="submit" class="{% if post.is_saved %}saved{% endif %}" aria-label="Сохранить" title="Сохранить"><span class="material-symbols-rounded">bookmark</span><b>{{ post.saves_count }}</b></button>
+                                </form>
+                                <button type="button" class="share-post-btn" data-post-id="{{ post.id }}" aria-label="Поделиться" title="Поделиться"><span class="material-symbols-rounded">share</span><b>Поделиться</b></button>
+                            </div>
+                        </div>
+
+                        <div class="post-card-footer">
+                            <div class="post-stats">
+                                <span><span class="material-symbols-rounded">visibility</span><b id="views-{{ post.id }}">{{ post.views }}</b> просмотров</span>
+                                <span class="visibility-label"><span class="material-symbols-rounded">public</span>{{ post.get_visibility_display }}</span>
+                            </div>
+                            {% if post.description %}<div class="post-description" id="description-{{ post.id }}">{{ post.formatted_description|safe }}</div>{% endif %}
+                            <div class="post-actions">
+                                <form method="post" action="{% url 'toggle_like' post.id %}" class="ajax-action-form" data-kind="like">
+                                    {% csrf_token %}
+                                    <button type="submit" class="{% if post.is_liked %}liked{% endif %}"><span class="material-symbols-rounded">favorite</span><b>{{ post.likes_count }}</b></button>
+                                </form>
+                                <button type="button" class="comment-toggle" onclick="toggleComments('{{ post.id }}')"><span class="material-symbols-rounded">chat_bubble</span><b id="comments-count-{{ post.id }}">{{ post.comments_count }}</b></button>
+                                <form method="post" action="{% url 'toggle_save_post' post.id %}" class="ajax-action-form" data-kind="save">
+                                    {% csrf_token %}
+                                    <button type="submit" class="{% if post.is_saved %}saved{% endif %}"><span class="material-symbols-rounded">bookmark</span><b>{% if post.is_saved %}Сохранено{% else %}Сохранить{% endif %}</b></button>
+                                </form>
+                                <button type="button" class="share-post-btn" data-post-id="{{ post.id }}"><span class="material-symbols-rounded">share</span><b>Поделиться</b></button>
+                            </div>
+                        </div>
+
+                        </div>
+
+                        <section class="comments-panel" id="comments-{{ post.id }}">
+                            <div class="comments-drawer-header">
+                                <h3>Комментарии</h3>
+                                <button type="button" onclick="toggleComments('{{ post.id }}')"><span class="material-symbols-rounded">close</span></button>
+                            </div>
+                            <div class="comments-drawer-list" id="comments-list-{{ post.id }}">
+                                {% for comment in post.comment_threads %}
+                                    <div class="comment-thread" id="comment-thread-{{ comment.id }}" data-root-id="{{ comment.id }}">
+                                    <div class="post-comment" id="comment-{{ comment.id }}" data-comment-id="{{ comment.id }}" data-parent-id="">
+                                        <div class="comment-avatar">
+                                            {% if comment.author.profile.avatar %}<img src="{{ comment.author.profile.avatar.url }}" alt="">{% else %}{{ comment.author.username|first|upper }}{% endif %}
+                                        </div>
+                                        <div class="comment-content">
+                                            <div class="comment-meta"><b>@{{ comment.author.username }}</b><time>{{ comment.created_at|date:"d.m H:i" }}</time></div>
+                                            <span class="comment-text">{{ comment.text }}</span>
+                                            <div class="comment-actions-row">
+                                                <button type="button" onclick="startCommentReply('{{ post.id }}', '{{ comment.id }}', '{{ comment.author.username|escapejs }}')"><span class="material-symbols-rounded">reply</span>Ответить</button>
+                                                {% if comment.author == user or post.author == user %}
+                                                    <button type="button" class="comment-delete-btn" data-delete-url="{% url 'delete_comment' comment.id %}" onclick="deleteComment(event, '{{ post.id }}', '{{ comment.id }}')"><span class="material-symbols-rounded">delete</span>Удалить</button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if comment.thread_replies %}
+                                        <button type="button" class="comment-replies-toggle" aria-expanded="false" onclick="toggleCommentReplies('{{ post.id }}', '{{ comment.id }}')">
+                                            <span class="comment-replies-line"></span>
+                                            <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                                            <b>Показать ответы</b>
+                                            <small>{{ comment.thread_replies|length }}</small>
+                                        </button>
+                                        <div class="comment-replies" id="comment-replies-{{ post.id }}-{{ comment.id }}" hidden>
+                                            {% for reply in comment.thread_replies %}
+                                                <div class="post-comment is-reply" id="comment-{{ reply.id }}" data-comment-id="{{ reply.id }}" data-parent-id="{{ reply.parent_id }}">
+                                                    <div class="comment-avatar">
+                                                        {% if reply.author.profile.avatar %}<img src="{{ reply.author.profile.avatar.url }}" alt="">{% else %}{{ reply.author.username|first|upper }}{% endif %}
+                                                    </div>
+                                                    <div class="comment-content">
+                                                        <div class="comment-reply-to">Ответ для @{{ reply.parent.author.username }}</div>
+                                                        <div class="comment-meta"><b>@{{ reply.author.username }}</b><time>{{ reply.created_at|date:"d.m H:i" }}</time></div>
+                                                        <span class="comment-text">{{ reply.text }}</span>
+                                                        <div class="comment-actions-row">
+                                                            <button type="button" onclick="startCommentReply('{{ post.id }}', '{{ reply.id }}', '{{ reply.author.username|escapejs }}')"><span class="material-symbols-rounded">reply</span>Ответить</button>
+                                                            {% if reply.author == user or post.author == user %}
+                                                                <button type="button" class="comment-delete-btn" data-delete-url="{% url 'delete_comment' reply.id %}" onclick="deleteComment(event, '{{ post.id }}', '{{ reply.id }}')"><span class="material-symbols-rounded">delete</span>Удалить</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    </div>
+                                {% empty %}
+                                    <p class="no-comments">Комментариев пока нет.</p>
+                                {% endfor %}
+                            </div>
+                            <form method="post" action="{% url 'add_comment' post.id %}" class="drawer-comment-form" onsubmit="sendComment(event, '{{ post.id }}')">
+                                {% csrf_token %}
+                                <div class="comment-reply-bar" id="comment-reply-bar-{{ post.id }}" hidden>
+                                    <span class="material-symbols-rounded">reply</span>
+                                    <span>Ответ <b></b></span>
+                                    <button type="button" onclick="cancelCommentReply('{{ post.id }}')"><span class="material-symbols-rounded">close</span></button>
+                                </div>
+                                <input type="hidden" name="parent_id" value="">
+                                <input type="text" name="text" maxlength="1000" placeholder="Написать комментарий..." autocomplete="off">
+                                <button type="submit"><span class="material-symbols-rounded">send</span></button>
+                            </form>
+                        </section>
+                    </article>
+                {% endfor %}
                 </div>
-
-                <div class="post-actions-side">
-
-                    <form method="post" action="{% url 'toggle_like' post.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="action-btn {% if post.is_liked %}liked{% endif %}">
-                            <span class="material-symbols-rounded">favorite</span>
-                            <small>{{ post.likes_count }}</small>
-                        </button>
-                    </form>
-
-                    <div class="action-btn static">
-                        <span class="material-symbols-rounded">visibility</span>
-                        <small id="views-{{ post.id }}">{{ post.views }}</small>
+                <div class="feed-end-marker" aria-label="Конец ленты">
+                    <span class="feed-end-line" aria-hidden="true"></span>
+                    <div class="feed-end-message">
+                        <span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+                        <strong>Вы долистали до конца</strong>
+                        <small>Новых публикаций пока нет</small>
                     </div>
-
-                    <button type="button" class="action-btn" onclick="openComments('{{ post.id }}')">
-                        <span class="material-symbols-rounded">chat_bubble</span>
-                        <small id="comments-count-{{ post.id }}">{{ post.comments_count }}</small>
-                    </button>
-
-                    <button type="button" class="action-btn">
-                        <span class="material-symbols-rounded">send</span>
-                        <small>Share</small>
-                    </button>
-
-                    <form method="post" action="{% url 'toggle_save_post' post.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="action-btn {% if post.is_saved %}saved{% endif %}">
-                            <span class="material-symbols-rounded">bookmark</span>
-                            <small>
-                                {% if post.is_saved %}
-                                    Saved
-                                {% else %}
-                                    Save
-                                {% endif %}
-                            </small>
-                        </button>
-                    </form>
-
+                    <span class="feed-end-line" aria-hidden="true"></span>
                 </div>
-
-                <aside class="comments-drawer" id="comments-{{ post.id }}">
-                    <div class="comments-drawer-header">
-                        <div>
-                            <h3>Комментарии</h3>
-                            <span>{{ post.comments_count }} всего</span>
-                        </div>
-
-                        <button type="button" onclick="closeComments('{{ post.id }}')">
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </div>
-
-                    <div class="comments-drawer-list" id="comments-list-{{ post.id }}">
-                        {% for comment in post.last_comments %}
-                        <div class="post-comment">
-                            <b>@{{ comment.author.username }}</b>
-                            <span>{{ comment.text }}</span>
-                        </div>
-                        {% empty %}
-                        <p class="no-comments">Комментариев пока нет.</p>
-                        {% endfor %}
-                    </div>
-
-                    <form
-                        method="post"
-                        action="{% url 'add_comment' post.id %}"
-                        class="comment-form drawer-comment-form"
-                        onsubmit="sendComment(event, '{{ post.id }}')"
-                    >
-                        {% csrf_token %}
-
-                        <input
-                            type="text"
-                            name="text"
-                            placeholder="Написать комментарий..."
-                            autocomplete="off"
-                        >
-
-                        <button type="submit">
-                            <span class="material-symbols-rounded">arrow_upward</span>
-                        </button>
-                    </form>
-                </aside>
-
-            </div>
-
-        </article>
-        {% endfor %}
-
-    </div>
-    {% else %}
-
-    <div class="feed-empty-card">
-        <span class="material-symbols-rounded">dynamic_feed</span>
-        <h3>Пока ничего нет</h3>
-        <p>Создай первый пост с видео.</p>
-
-        <a href="{% url 'create_post' %}" class="home-btn primary">
-            Создать пост
-        </a>
-    </div>
-
+            {% else %}
+                <div class="feed-empty-card"><span class="material-symbols-rounded">dynamic_feed</span><h3>В ленте пока пусто</h3><p>Загрузи первое видео или открой общую ленту.</p></div>
+            {% endif %}
+            </main>
+        </div>
+    </section>
 {% endif %}
-
-    </main>
-</div>
-
-</section>
-
-{% endif %}
-
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    const videos = document.querySelectorAll(".post-video");
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const video = entry.target;
-
-            if (entry.isIntersecting) {
-                videos.forEach(other => {
-                    if (other !== video) other.pause();
-                });
-
-                video.play().catch(() => {});
-            } else {
-                video.pause();
-            }
+    const videos = [...document.querySelectorAll(".post-video")];
+    const galleryAudios = [...document.querySelectorAll(".gallery-audio")];
+    const mediaTracks = [...videos, ...galleryAudios];
+    const viewed = new Set();
+    let preferredSoundEnabled = true;
+    let soundEnabled = preferredSoundEnabled;
+    let activeVideo = null;
+    let audioUnlocked = false;
+    const syncSoundButtons = () => {
+        document.querySelectorAll(".video-sound, .gallery-sound").forEach(button => {
+            button.querySelector(".material-symbols-rounded").textContent = soundEnabled ? "volume_up" : "volume_off";
+            button.setAttribute("aria-pressed", String(soundEnabled));
+            button.setAttribute("aria-label", soundEnabled ? "Выключить звук" : "Включить звук");
+            button.title = soundEnabled ? "Выключить звук" : "Включить звук";
         });
-    }, { threshold: 0.65 });
-
-    videos.forEach(video => observer.observe(video));
-
-    document.querySelectorAll(".custom-video-player").forEach(player => {
-        const video = player.querySelector(".post-video");
-        const button = player.querySelector(".video-play-btn");
-        const icon = button.querySelector("span");
-        const soundBtn = player.querySelector(".video-sound-btn");
-        const soundIcon = soundBtn.querySelector("span");
-        const progress = player.querySelector(".video-progress-range");
-
-        let isSeeking = false;
-
-        function updateButton() {
-            icon.textContent = video.paused ? "play_arrow" : "pause";
-            button.classList.toggle("visible", video.paused);
+    };
+    const setSoundEnabled = (enabled, remember = true) => {
+        soundEnabled = enabled;
+        if (remember) {
+            preferredSoundEnabled = enabled;
         }
+        mediaTracks.forEach(media => {
+            media.volume = enabled ? 1 : 0;
+            media.muted = !enabled;
+        });
+        syncSoundButtons();
+    };
+    setSoundEnabled(soundEnabled, false);
 
-        function updateSoundIcon() {
-            soundIcon.textContent = video.muted ? "volume_off" : "volume_up";
+    const removeUnlockListeners = () => {
+        document.removeEventListener("pointerdown", unlockAudio, true);
+        document.removeEventListener("keydown", unlockAudio, true);
+        document.removeEventListener("touchstart", unlockAudio, true);
+        document.removeEventListener("click", unlockAudio, true);
+    };
+    const unlockAudio = async event => {
+        if (audioUnlocked) return;
+        if (event.target instanceof Element && event.target.closest(".video-sound, .gallery-sound")) return;
+        setSoundEnabled(preferredSoundEnabled, false);
+        if (!preferredSoundEnabled) return;
+        const target = activeVideo || videos[0] || galleryAudios[0];
+        if (!target) {
+            audioUnlocked = true;
+            removeUnlockListeners();
+            return;
         }
-
-        function toggleVideo() {
-            video.paused ? video.play().catch(() => {}) : video.pause();
+        try {
+            await target.play();
+            audioUnlocked = true;
+            removeUnlockListeners();
+        } catch {
+            // Keep listening until the browser accepts a user activation.
         }
+    };
+    document.addEventListener("pointerdown", unlockAudio, true);
+    document.addEventListener("keydown", unlockAudio, true);
+    document.addEventListener("touchstart", unlockAudio, true);
+    document.addEventListener("click", unlockAudio, true);
 
-        video.addEventListener("click", e => {
-            e.stopPropagation();
-            toggleVideo();
-        });
+    const feed = document.getElementById("feed");
+    const sidebar = document.querySelector(".feed-sidebar");
+    if (feed && sidebar) {
+        new IntersectionObserver(([entry]) => sidebar.classList.toggle("visible", entry.isIntersecting), {threshold: 0}).observe(feed);
+    }
 
-        button.addEventListener("click", e => {
-            e.stopPropagation();
-            toggleVideo();
-        });
-
-        soundBtn.addEventListener("click", e => {
-            e.stopPropagation();
-            video.muted = !video.muted;
-            updateSoundIcon();
-        });
-
-        ["click", "pointerdown", "pointermove", "pointerup", "input"].forEach(name => {
-            progress.addEventListener(name, e => e.stopPropagation());
-        });
-
-        progress.addEventListener("pointerdown", () => isSeeking = true);
-        progress.addEventListener("pointerup", () => isSeeking = false);
-
-        video.addEventListener("loadedmetadata", () => {
-            progress.max = video.duration;
-
-            const videoWidth = video.videoWidth;
-            const videoHeight = video.videoHeight;
-
-            if (!videoWidth || !videoHeight) return;
-
-            const ratio = videoWidth / videoHeight;
-
-            let maxWidth = 620;
-            let maxHeight = Math.min(760, window.innerHeight - 150);
-
-            if (window.innerWidth < 900) {
-                maxWidth = Math.min(window.innerWidth - 32, 620);
-                maxHeight = Math.min(720, window.innerHeight - 140);
-            }
-
-            let playerWidth = maxWidth;
-            let playerHeight = playerWidth / ratio;
-
-            if (playerHeight > maxHeight) {
-                playerHeight = maxHeight;
-                playerWidth = playerHeight * ratio;
-            }
-
-            playerWidth = Math.max(playerWidth, 320);
-            playerHeight = Math.max(playerHeight, 260);
-
-            player.style.setProperty("--player-width", `${playerWidth}px`);
-            player.style.setProperty("--player-height", `${playerHeight}px`);
-        });
-
-        progress.addEventListener("input", () => {
-            video.currentTime = Number(progress.value);
-        });
-
-        video.addEventListener("timeupdate", () => {
-            if (!isSeeking) progress.value = video.currentTime;
-        });
-
-        video.addEventListener("play", updateButton);
-        video.addEventListener("pause", updateButton);
-
-        video.muted = false;
-        updateButton();
-        updateSoundIcon();
+    document.querySelector(".feed-jump")?.addEventListener("click", event => {
+        const firstPost = document.getElementById("feed-first-post");
+        if (!firstPost) return;
+        event.preventDefault();
+        const headerHeight = document.querySelector(".navbar")?.offsetHeight || 0;
+        const topGap = window.innerWidth <= 980 ? 14 : 22;
+        const bottomGap = window.innerWidth <= 980 ? 14 : 22;
+        const cardRect = firstPost.getBoundingClientRect();
+        const availableHeight = window.innerHeight - headerHeight - topGap - bottomGap;
+        const cardTop = cardRect.top + window.scrollY;
+        const cardBottom = cardTop + cardRect.height;
+        const top = cardRect.height <= availableHeight
+            ? cardTop - headerHeight - topGap
+            : cardBottom - window.innerHeight + bottomGap;
+        window.scrollTo({top: Math.max(0, top), behavior: "smooth"});
     });
+
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+        const video = entry.target;
+        if (entry.isIntersecting) {
+            activeVideo = video;
+            videos.forEach(other => { if (other !== video) other.pause(); });
+            galleryAudios.forEach(audio => audio.pause());
+            video.muted = !soundEnabled;
+            video.volume = soundEnabled ? 1 : 0;
+            video.play().catch(() => {});
+            if (!viewed.has(video.dataset.post)) {
+                viewed.add(video.dataset.post);
+                registerView(video.dataset.post);
+            }
+        } else video.pause();
+    }), {threshold: .35});
+
+    videos.forEach(video => {
+        observer.observe(video);
+        const player = video.closest(".custom-video-player");
+        const center = player.querySelector(".video-center-play");
+        const toggle = player.querySelector(".video-toggle");
+        const sound = player.querySelector(".video-sound");
+        const fullscreen = player.querySelector(".video-fullscreen");
+        const progress = player.querySelector(".video-progress-range");
+        let isSeeking = false;
+        const update = () => {
+            toggle.querySelector("span").textContent = video.paused ? "play_arrow" : "pause";
+            center.classList.toggle("visible", video.paused);
+            syncSoundButtons();
+        };
+        const playToggle = () => video.paused ? video.play().catch(() => {}) : video.pause();
+        center.onclick = playToggle;
+        toggle.onclick = playToggle;
+        video.onclick = playToggle;
+        sound.onclick = event => {
+            event.stopPropagation();
+            setSoundEnabled(!soundEnabled);
+            if (video.paused) video.play().catch(() => {});
+            update();
+        };
+        fullscreen.onclick = () => player.requestFullscreen?.();
+        const syncDuration = () => {
+            if (Number.isFinite(video.duration) && video.duration > 0) progress.max = String(video.duration);
+        };
+        const seek = () => {
+            if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+            video.currentTime = Math.min(video.duration, Math.max(0, Number(progress.value)));
+        };
+        ["click", "pointerdown", "pointerup", "input", "change"].forEach(name => progress.addEventListener(name, event => event.stopPropagation()));
+        progress.addEventListener("pointerdown", () => isSeeking = true);
+        progress.addEventListener("pointerup", () => { seek(); isSeeking = false; });
+        progress.addEventListener("input", seek);
+        progress.addEventListener("change", seek);
+        video.addEventListener("loadedmetadata", syncDuration);
+        video.addEventListener("durationchange", syncDuration);
+        video.ontimeupdate = () => { if (!isSeeking) progress.value = String(video.currentTime); };
+        video.onvolumechange = update;
+        video.onplay = update;
+        video.onpause = update;
+        syncDuration();
+        update();
+    });
+
+    document.querySelectorAll(".ajax-action-form").forEach(form => form.onsubmit = async event => {
+        event.preventDefault();
+        const response = await fetch(form.action, {method: "POST", body: new FormData(form), headers: {"X-Requested-With": "XMLHttpRequest"}});
+        if (!response.ok) return;
+        const data = await response.json();
+        const button = form.querySelector("button");
+        if (form.dataset.kind === "like") {
+            button.classList.toggle("liked", data.is_liked);
+            button.querySelector("b").textContent = data.likes_count;
+        } else {
+            button.classList.toggle("saved", data.is_saved);
+            button.querySelector("b").textContent = data.saves_count;
+            button.title = data.is_saved ? "Сохранено" : "Сохранить";
+            button.setAttribute("aria-label", button.title);
+        }
+    });
+
+    document.querySelectorAll(".manage-delete").forEach(button => {
+        button.addEventListener("click", () => deletePost(button.dataset.postId, button.dataset.deleteUrl));
+    });
+
+    document.querySelectorAll("[data-gallery]").forEach(gallery => {
+        const track = gallery.querySelector(".post-gallery-track");
+        const slides = [...gallery.querySelectorAll(".post-gallery-slide")];
+        const dots = [...gallery.querySelectorAll("[data-gallery-dot]")];
+        const count = gallery.querySelector(".gallery-count b");
+        const audio = gallery.querySelector(".gallery-audio");
+        const sound = gallery.querySelector(".gallery-sound");
+        const previous = gallery.querySelector("[data-gallery-prev]");
+        const next = gallery.querySelector("[data-gallery-next]");
+        let current = 0;
+        let programmaticScroll = false;
+        let scrollAnimationFrame;
+        let scrollTimer;
+        const slideWidth = () => Math.max(1, track.clientWidth || gallery.clientWidth);
+        const updateGalleryUi = () => {
+            dots.forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === current));
+            if (count) count.textContent = current + 1;
+            if (previous) previous.disabled = current === 0;
+            if (next) next.disabled = current === slides.length - 1;
+        };
+        const syncFromScroll = () => {
+            current = Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / slideWidth())));
+            updateGalleryUi();
+        };
+        const goTo = (index, smooth = true, startOverride = null) => {
+            current = Math.max(0, Math.min(slides.length - 1, index));
+            updateGalleryUi();
+            window.cancelAnimationFrame(scrollAnimationFrame);
+            programmaticScroll = true;
+            const targetLeft = current * slideWidth();
+            if (!smooth) {
+                track.classList.remove("is-settling");
+                track.scrollLeft = targetLeft;
+                programmaticScroll = false;
+                syncFromScroll();
+                return;
+            }
+            const startLeft = startOverride ?? track.scrollLeft;
+            track.scrollLeft = startLeft;
+            const distance = targetLeft - startLeft;
+            const duration = Math.min(520, Math.max(280, 240 + Math.abs(distance) / slideWidth() * 280));
+            const startedAt = performance.now();
+            track.classList.add("is-settling");
+            const animate = now => {
+                const progress = Math.min(1, (now - startedAt) / duration);
+                const eased = progress < .5
+                    ? 4 * progress * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                track.scrollLeft = startLeft + distance * eased;
+                if (progress < 1) {
+                    scrollAnimationFrame = window.requestAnimationFrame(animate);
+                } else {
+                    track.scrollLeft = targetLeft;
+                    track.classList.remove("is-settling");
+                    programmaticScroll = false;
+                    syncFromScroll();
+                }
+            };
+            scrollAnimationFrame = window.requestAnimationFrame(animate);
+        };
+        previous?.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            goTo(current - 1);
+        });
+        next?.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            goTo(current + 1);
+        });
+        dots.forEach(dot => dot.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            goTo(Number(dot.dataset.galleryDot));
+        }));
+        let mouseDragging = false;
+        let dragPointerId = null;
+        let dragStartX = 0;
+        let dragStartScroll = 0;
+        let dragBaseIndex = 0;
+        track.querySelectorAll("img").forEach(image => image.draggable = false);
+        track.addEventListener("dragstart", event => event.preventDefault());
+        track.addEventListener("touchstart", () => {
+            window.cancelAnimationFrame(scrollAnimationFrame);
+            track.classList.remove("is-settling");
+            programmaticScroll = false;
+        }, {passive: true});
+        track.addEventListener("pointerdown", event => {
+            if (event.pointerType !== "mouse" || event.button !== 0) return;
+            window.cancelAnimationFrame(scrollAnimationFrame);
+            track.classList.remove("is-settling");
+            programmaticScroll = false;
+            mouseDragging = true;
+            dragPointerId = event.pointerId;
+            dragStartX = event.clientX;
+            dragStartScroll = track.scrollLeft;
+            dragBaseIndex = Math.round(dragStartScroll / slideWidth());
+            track.setPointerCapture(event.pointerId);
+            track.classList.add("is-mouse-dragging");
+            event.preventDefault();
+        });
+        track.addEventListener("pointermove", event => {
+            if (!mouseDragging || event.pointerId !== dragPointerId) return;
+            track.scrollLeft = dragStartScroll - (event.clientX - dragStartX);
+            event.preventDefault();
+        });
+        const finishMouseDrag = (event, cancelled = false) => {
+            if (!mouseDragging || event.pointerId !== dragPointerId) return;
+            const distance = event.clientX - dragStartX;
+            const releaseLeft = track.scrollLeft;
+            const threshold = slideWidth() * .18;
+            let target = dragBaseIndex;
+            if (!cancelled && Math.abs(distance) >= threshold) {
+                target = dragBaseIndex + (distance < 0 ? 1 : -1);
+            }
+            mouseDragging = false;
+            dragPointerId = null;
+            track.classList.add("is-settling");
+            track.classList.remove("is-mouse-dragging");
+            track.scrollLeft = releaseLeft;
+            goTo(cancelled ? dragBaseIndex : target, true, releaseLeft);
+        };
+        track.addEventListener("pointerup", event => finishMouseDrag(event));
+        track.addEventListener("pointercancel", event => finishMouseDrag(event, true));
+        track.addEventListener("scroll", () => {
+            if (programmaticScroll || mouseDragging) return;
+            window.clearTimeout(scrollTimer);
+            scrollTimer = window.setTimeout(syncFromScroll, 70);
+        });
+        new ResizeObserver(() => goTo(current, false)).observe(track);
+        updateGalleryUi();
+        sound?.addEventListener("click", event => {
+            event.stopPropagation();
+            setSoundEnabled(!soundEnabled);
+            if (audio.paused) audio.play().catch(() => {});
+        });
+    });
+
+    const galleryViewObserver = new IntersectionObserver(entries => entries.forEach(entry => {
+        const postId = entry.target.closest("[data-post-id]")?.dataset.postId;
+        const audio = entry.target.querySelector(".gallery-audio");
+        if (entry.isIntersecting) {
+            videos.forEach(video => video.pause());
+            galleryAudios.forEach(other => { if (other !== audio) other.pause(); });
+            if (audio) {
+                audio.muted = !soundEnabled;
+                audio.volume = 1;
+                audio.play().catch(() => {});
+            }
+            if (postId && !viewed.has(postId)) {
+                viewed.add(postId);
+                registerView(postId);
+            }
+        } else audio?.pause();
+    }), {threshold: .35});
+    document.querySelectorAll(".post-gallery").forEach(gallery => galleryViewObserver.observe(gallery));
+
 });
 
-function openComments(postId) {
-    const drawer = document.getElementById(`comments-${postId}`);
-    if (!drawer) return;
-
-    const wrap = drawer.closest(".post-video-wrap");
-
-    drawer.classList.add("active");
-    if (wrap) wrap.classList.add("comments-open");
+function registerView(postId) {
+    const csrf = document.querySelector("[name=csrfmiddlewaretoken]")?.value;
+    fetch(`/post/${postId}/view/`, {method: "POST", headers: {"X-CSRFToken": csrf}})
+        .then(r => r.json()).then(data => document.getElementById(`views-${postId}`).textContent = data.views).catch(() => {});
 }
-
-function closeComments(postId) {
-    const drawer = document.getElementById(`comments-${postId}`);
-    if (!drawer) return;
-
-    const wrap = drawer.closest(".post-video-wrap");
-
-    drawer.classList.remove("active");
-    if (wrap) wrap.classList.remove("comments-open");
+function toggleComments(postId) {
+    const panel = document.getElementById(`comments-${postId}`);
+    if (!panel) return;
+    const card = panel.closest(".post-card");
+    const willOpen = !panel.classList.contains("active");
+    const toggle = document.querySelector(`[data-post-id="${postId}"] .comment-toggle`);
+    window.clearTimeout(panel._closeTimer);
+    if (willOpen) {
+        panel.classList.remove("closing");
+        card?.classList.add("comments-open");
+        panel.classList.add("active");
+        toggle?.classList.add("active");
+    } else {
+        panel.classList.remove("active");
+        panel.classList.add("closing");
+        card?.classList.remove("comments-open");
+        toggle?.classList.remove("active");
+        panel._closeTimer = window.setTimeout(() => {
+            panel.classList.remove("closing");
+        }, 580);
+    }
 }
-
-function sendComment(event, postId) {
+function toggleManage(postId) {
+    document.getElementById(`manage-${postId}`)?.classList.toggle("active");
+}
+async function savePost(event, postId) {
     event.preventDefault();
-
     const form = event.target;
-    const input = form.querySelector("input[name='text']");
-    const text = input.value.trim();
-
-    if (!text) return;
-
-    const formData = new FormData(form);
-
-    fetch(form.action, {
-        method: "POST",
-        body: formData,
-        headers: {
-            "X-Requested-With": "XMLHttpRequest"
+    const response = await fetch(form.action, {method: "POST", body: new FormData(form), headers: {"X-Requested-With": "XMLHttpRequest"}});
+    if (!response.ok) return;
+    const data = await response.json();
+    let description = document.getElementById(`description-${postId}`);
+    if (data.description) {
+        if (!description) {
+            description = document.createElement("div");
+            description.id = `description-${postId}`;
+            description.className = "post-description";
+            document.querySelector(`[data-post-id="${postId}"] .post-stats`).after(description);
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.success) return;
-
-        const list = document.getElementById(`comments-list-${postId}`);
-        const counter = document.getElementById(`comments-count-${postId}`);
-        const emptyText = list.querySelector(".no-comments");
-
-        if (emptyText) emptyText.remove();
-
-        const comment = document.createElement("div");
-        comment.className = "post-comment";
-        comment.innerHTML = `
-            <b>@${data.username}</b>
-            <span>${data.text}</span>
-        `;
-
-        list.prepend(comment);
-
-        if (counter) counter.textContent = data.comments_count;
-
-        input.value = "";
+        description.textContent = data.description;
+    } else {
+        description?.remove();
+    }
+    document.querySelector(`[data-post-id="${postId}"] .visibility-label`).lastChild.textContent = data.visibility_label;
+    form.classList.remove("active");
+}
+async function deletePost(postId, url) {
+    const confirmed = await window.veyraConfirm({
+        title: "Удалить публикацию?",
+        text: "Видео, фотографии, лайки и комментарии будут удалены без возможности восстановления."
     });
+    if (!confirmed) return;
+    const csrf = document.querySelector(`#manage-${postId} [name=csrfmiddlewaretoken]`).value;
+    const response = await fetch(url, {method: "POST", headers: {"X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest"}});
+    if (response.ok) document.querySelector(`[data-post-id="${postId}"]`)?.remove();
+}
+function updateCommentsCount(postId, count) {
+    document.querySelectorAll(`[id="comments-count-${postId}"]`).forEach(counter => counter.textContent = count);
+}
+function toggleCommentReplies(postId, rootId, forceOpen = false) {
+    const replies = document.getElementById(`comment-replies-${postId}-${rootId}`);
+    const thread = document.getElementById(`comment-thread-${rootId}`);
+    const toggle = thread?.querySelector(".comment-replies-toggle");
+    if (!replies || !toggle) return;
+    const shouldOpen = forceOpen || replies.hidden;
+    replies.hidden = false;
+    requestAnimationFrame(() => replies.classList.toggle("active", shouldOpen));
+    toggle.classList.toggle("active", shouldOpen);
+    toggle.setAttribute("aria-expanded", String(shouldOpen));
+    toggle.querySelector("b").textContent = shouldOpen ? "Скрыть ответы" : "Показать ответы";
+    if (!shouldOpen) {
+        window.setTimeout(() => {
+            if (!replies.classList.contains("active")) replies.hidden = true;
+        }, 260);
+    }
+}
+function ensureCommentReplies(postId, rootId) {
+    const thread = document.getElementById(`comment-thread-${rootId}`);
+    if (!thread) return null;
+    let replies = document.getElementById(`comment-replies-${postId}-${rootId}`);
+    if (replies) return replies;
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "comment-replies-toggle";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.innerHTML = '<span class="comment-replies-line"></span><span class="material-symbols-rounded">keyboard_arrow_down</span><b>Показать ответы</b><small>0</small>';
+    toggle.onclick = () => toggleCommentReplies(postId, rootId);
+    replies = document.createElement("div");
+    replies.className = "comment-replies";
+    replies.id = `comment-replies-${postId}-${rootId}`;
+    replies.hidden = true;
+    thread.append(toggle, replies);
+    return replies;
+}
+function refreshCommentThread(thread) {
+    if (!thread) return;
+    const rootId = thread.dataset.rootId;
+    const root = document.getElementById(`comment-${rootId}`);
+    if (!root) {
+        thread.remove();
+        return;
+    }
+    const replies = thread.querySelector(".comment-replies");
+    const toggle = thread.querySelector(".comment-replies-toggle");
+    const count = replies?.querySelectorAll(".post-comment").length || 0;
+    if (!count) {
+        replies?.remove();
+        toggle?.remove();
+        return;
+    }
+    toggle.querySelector("small").textContent = count;
+}
+function startCommentReply(postId, commentId, username) {
+    const form = document.querySelector(`#comments-${postId} .drawer-comment-form`);
+    if (!form) return;
+    form.querySelector("[name='parent_id']").value = commentId;
+    const bar = document.getElementById(`comment-reply-bar-${postId}`);
+    bar.hidden = false;
+    bar.querySelector("b").textContent = `@${username}`;
+    const input = form.querySelector("[name='text']");
+    input.placeholder = `Ответ для @${username}`;
+    input.focus();
+}
+function cancelCommentReply(postId) {
+    const form = document.querySelector(`#comments-${postId} .drawer-comment-form`);
+    if (!form) return;
+    form.querySelector("[name='parent_id']").value = "";
+    form.querySelector("[name='text']").placeholder = "Написать комментарий...";
+    document.getElementById(`comment-reply-bar-${postId}`).hidden = true;
+}
+function createCommentElement(data, postId) {
+    const item = document.createElement("div");
+    item.className = `post-comment${data.parent_id ? " is-reply" : ""}`;
+    item.id = `comment-${data.comment_id}`;
+    item.dataset.commentId = data.comment_id;
+    item.dataset.parentId = data.parent_id || "";
+
+    const avatar = document.createElement("div");
+    avatar.className = "comment-avatar";
+    if (data.avatar) {
+        const image = document.createElement("img");
+        image.src = data.avatar;
+        image.alt = "";
+        avatar.append(image);
+    } else avatar.textContent = data.username.charAt(0).toUpperCase();
+
+    const content = document.createElement("div");
+    content.className = "comment-content";
+    if (data.parent_id) {
+        const context = document.createElement("div");
+        context.className = "comment-reply-to";
+        context.textContent = `Ответ для @${data.parent_username}`;
+        content.append(context);
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "comment-meta";
+    const author = document.createElement("b");
+    author.textContent = `@${data.username}`;
+    const time = document.createElement("time");
+    time.textContent = "только что";
+    meta.append(author, time);
+
+    const text = document.createElement("span");
+    text.className = "comment-text";
+    text.textContent = data.text;
+
+    const actions = document.createElement("div");
+    actions.className = "comment-actions-row";
+    const reply = document.createElement("button");
+    reply.type = "button";
+    reply.innerHTML = '<span class="material-symbols-rounded">reply</span>Ответить';
+    reply.onclick = () => startCommentReply(postId, data.comment_id, data.username);
+    actions.append(reply);
+    if (data.can_delete) {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "comment-delete-btn";
+        remove.dataset.deleteUrl = data.delete_url;
+        remove.innerHTML = '<span class="material-symbols-rounded">delete</span>Удалить';
+        remove.onclick = event => deleteComment(event, postId, data.comment_id);
+        actions.append(remove);
+    }
+
+    content.append(meta, text, actions);
+    item.append(avatar, content);
+    return item;
+}
+async function deleteComment(event, postId, commentId) {
+    const button = event.currentTarget;
+    const confirmed = await window.veyraConfirm({
+        title: "Удалить комментарий?",
+        text: "Комментарий и ответы на него исчезнут навсегда."
+    });
+    if (!confirmed) return;
+    const csrf = document.querySelector(`#comments-${postId} [name='csrfmiddlewaretoken']`)?.value;
+    const response = await fetch(button.dataset.deleteUrl, {
+        method: "POST",
+        headers: {"X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest"}
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    const affectedThread = document.getElementById(`comment-${commentId}`)?.closest(".comment-thread");
+    const pending = [String(commentId)];
+    while (pending.length) {
+        const id = pending.pop();
+        document.querySelectorAll(`#comments-list-${postId} [data-parent-id="${id}"]`).forEach(reply => {
+            pending.push(reply.dataset.commentId);
+            reply.remove();
+        });
+        document.getElementById(`comment-${id}`)?.remove();
+    }
+    refreshCommentThread(affectedThread);
+    const list = document.getElementById(`comments-list-${postId}`);
+    if (!list.querySelector(".post-comment")) {
+        const empty = document.createElement("p");
+        empty.className = "no-comments";
+        empty.textContent = "Комментариев пока нет.";
+        list.append(empty);
+    }
+    updateCommentsCount(postId, data.comments_count);
+}
+async function sendComment(event, postId) {
+    event.preventDefault();
+    const form = event.target;
+    const response = await fetch(form.action, {method: "POST", body: new FormData(form), headers: {"X-Requested-With": "XMLHttpRequest"}});
+    const data = await response.json();
+    if (!response.ok || !data.success) return;
+    const list = document.getElementById(`comments-list-${postId}`);
+    list.querySelector(".no-comments")?.remove();
+    const item = createCommentElement(data, postId);
+    if (data.parent_id) {
+        const parent = document.getElementById(`comment-${data.parent_id}`);
+        const thread = parent?.closest(".comment-thread");
+        const rootId = thread?.dataset.rootId;
+        const replies = rootId ? ensureCommentReplies(postId, rootId) : null;
+        if (replies) {
+            replies.append(item);
+            const count = replies.querySelectorAll(".post-comment").length;
+            thread.querySelector(".comment-replies-toggle small").textContent = count;
+            toggleCommentReplies(postId, rootId, true);
+            item.scrollIntoView({block: "nearest", behavior: "smooth"});
+        }
+    } else {
+        const thread = document.createElement("div");
+        thread.className = "comment-thread";
+        thread.id = `comment-thread-${data.comment_id}`;
+        thread.dataset.rootId = data.comment_id;
+        thread.append(item);
+        list.prepend(thread);
+        list.scrollTo({top: 0, behavior: "smooth"});
+    }
+    updateCommentsCount(postId, data.comments_count);
+    form.querySelector("[name='text']").value = "";
+    cancelCommentReply(postId);
 }
 </script>
-
 {% endblock %}

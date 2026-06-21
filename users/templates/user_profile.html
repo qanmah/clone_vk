@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block title %}{{ profile_user.username|capfirst }}{% endblock %}
 
 {% block content %}
 
@@ -36,11 +37,11 @@
                 {% else %}
 
                     {% if is_friend %}
-                        <div class="profile-status success">👥 Вы друзья</div>
-
                         <a href="{% url 'unfollow' profile_user.username %}" class="profile-btn danger">
                             Отписаться
                         </a>
+
+                        <div class="profile-status success friend-status">👥 Вы друзья</div>
 
                     {% elif following %}
                         <div class="profile-status">📨 Вы подписаны</div>
@@ -80,6 +81,45 @@
         </div>
 
     </div>
+
+    <section class="profile-publications">
+        <div class="profile-publications-head">
+            <div>
+                <span>Публикации</span>
+                <h2>Видео и фотографии</h2>
+            </div>
+            <b>{{ profile_posts|length }}</b>
+        </div>
+
+        <div class="profile-post-grid">
+            {% for post in profile_posts %}
+                <a href="{% url 'post_detail' post.id %}" class="profile-post-card">
+                    <div class="profile-post-media">
+                        {% if post.video %}
+                            <video muted playsinline preload="metadata"><source src="{{ post.video.url }}"></video>
+                            <span class="profile-post-kind"><span class="material-symbols-rounded">play_arrow</span>Видео</span>
+                        {% elif post.first_image %}
+                            <img src="{{ post.first_image.image.url }}" alt="Публикация">
+                            <span class="profile-post-kind"><span class="material-symbols-rounded">photo_library</span>Фото{% if post.images.count > 1 %} · {{ post.images.count }}{% endif %}</span>
+                        {% endif %}
+                        {% if post.visibility != "public" %}<span class="profile-post-lock"><span class="material-symbols-rounded">lock</span></span>{% endif %}
+                    </div>
+                    <div class="profile-post-info">
+                        <span><span class="material-symbols-rounded">visibility</span>{{ post.views }}</span>
+                        <span><span class="material-symbols-rounded">favorite</span>{{ post.likes_count }}</span>
+                        <span><span class="material-symbols-rounded">chat_bubble</span>{{ post.comments_count }}</span>
+                        <time>{{ post.relative_created_at }}</time>
+                    </div>
+                </a>
+            {% empty %}
+                <div class="profile-post-empty">
+                    <span class="material-symbols-rounded">movie</span>
+                    <h3>Публикаций пока нет</h3>
+                    <p>Здесь появятся видео и фотографии пользователя.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
 
 </div>
 
@@ -156,6 +196,15 @@ function closeModal() {
     document.getElementById("profile-modal").classList.remove("active");
     document.getElementById("profile-overlay").classList.remove("active");
 }
+
+document.querySelectorAll(".profile-post-card video").forEach(video => {
+    const card = video.closest(".profile-post-card");
+    card.addEventListener("mouseenter", () => video.play().catch(() => {}));
+    card.addEventListener("mouseleave", () => {
+        video.pause();
+        video.currentTime = 0;
+    });
+});
 </script>
 
 {% endblock %}

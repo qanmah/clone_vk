@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('create/', views.create_post, name='create_post'),
+    path('search/suggestions/', views.search_suggestions, name='search_suggestions'),
+    path('description/suggestions/', views.description_suggestions, name='description_suggestions'),
     path('register/', views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
@@ -27,7 +29,12 @@ urlpatterns = [
     path("chat/<str:username>/photo/", views.send_chat_photo, name="send_chat_photo"),
     path("post/<int:post_id>/like/", views.toggle_like, name="toggle_like"),
     path("post/<int:post_id>/comment/", views.add_comment, name="add_comment"),
+    path("comment/<int:comment_id>/delete/", views.delete_comment, name="delete_comment"),
     path("post/<int:post_id>/", views.post_detail, name="post_detail"),
     path("post/<int:post_id>/save/", views.toggle_save_post, name="toggle_save_post"),
+    path("post/<int:post_id>/share/friends/", views.share_post_friends, name="share_post_friends"),
+    path("post/<int:post_id>/share/", views.share_post, name="share_post"),
     path("post/<int:post_id>/view/", views.register_view, name="register_view"),
+    path("post/<int:post_id>/delete/", views.delete_post, name="delete_post"),
+    path("post/<int:post_id>/manage/", views.manage_post, name="manage_post"),
 ]

@@ -125,6 +125,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "reply_user": event.get("reply_user"),
         }))
 
+    async def shared_post_message(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "shared_post",
+            "message_id": event["message_id"],
+            "user": event["user"],
+            "sender_id": event["sender_id"],
+            "created_at": event["created_at"],
+            "created_date": event.get("created_date"),
+            "is_read": event.get("is_read", False),
+            "post_id": event["post_id"],
+            "post_url": event["post_url"],
+            "media_type": event["media_type"],
+            "media_url": event["media_url"],
+            "post_author": event["post_author"],
+            "views": event.get("views", 0),
+            "likes": event.get("likes", 0),
+        }))
+
     async def typing_status(self, event):
         await self.send(text_data=json.dumps({
             "type": "typing",

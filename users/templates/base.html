@@ -3,12 +3,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>VK Clone</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Veyra | {% block title %}Home{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/chat.css' %}">
     <link rel="stylesheet" href="{% static 'css/profile.css' %}">
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/player-card.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app-theme.css' %}">
     <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
@@ -42,7 +45,39 @@
                         <span class="material-symbols-rounded">bolt</span>
                     </div>
 
-                    {% if unread_chats or requests %}
+                    {% if activity_items %}
+                        <div class="activity-list">
+                            {% for item in activity_items %}
+                                <a href="{{ item.url }}" class="notif-item activity-item activity-{{ item.type }}">
+                                    <span class="activity-avatar-wrap">
+                                        <img src="{{ item.avatar }}" class="avatar" alt="">
+                                        <i class="material-symbols-rounded">{{ item.icon }}</i>
+                                    </span>
+                                    <span class="activity-copy">
+                                        <b>{{ item.title }}</b>
+                                        <small>{{ item.text|truncatechars:90 }}</small>
+                                    </span>
+                                </a>
+                                {% if item.request %}
+                                    <div class="notif-actions activity-actions">
+                                        {% if item.request.from_user.id in following_ids and item.request.from_user.id in follower_ids %}
+                                            <span>Вы уже друзья</span>
+                                        {% else %}
+                                            <a href="{% url 'send_friend_request' item.request.from_user.username %}">Подписаться в ответ</a>
+                                        {% endif %}
+                                        <a href="{% url 'mark_read' item.request.id %}">Прочитано</a>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        {% if requests %}
+                            <div class="notif-read-all">
+                                <a href="{% url 'mark_all_read' %}">Прочитать все подписки</a>
+                            </div>
+                        {% endif %}
+
+                    {% elif unread_chats or requests %}
 
                         {% if unread_chats %}
                             {% for chat in unread_chats %}
@@ -104,6 +139,12 @@
         {% endif %}
     </div>
 
+    <form class="global-search" action="{% url 'home' %}" method="get" autocomplete="off" data-suggestions-url="{% url 'search_suggestions' %}">
+        <span class="material-symbols-rounded">search</span>
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Поиск видео и авторов" aria-label="Поиск" aria-autocomplete="list" aria-expanded="false">
+        <div class="search-suggestions" role="listbox"></div>
+    </form>
+
     <div class="nav-right">
         {% if user.is_authenticated %}
             <a href="{% url 'chat' %}" class="nav-link">
@@ -134,7 +175,86 @@
     {% endblock %}
 </main>
 
+<div class="veyra-confirm" id="veyra-confirm" aria-hidden="true">
+    <button type="button" class="veyra-confirm-backdrop" data-confirm-cancel aria-label="Закрыть окно"></button>
+    <section class="veyra-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="veyra-confirm-title" aria-describedby="veyra-confirm-text">
+        <div class="veyra-confirm-icon"><span class="material-symbols-rounded">delete_forever</span></div>
+        <div class="veyra-confirm-copy">
+            <span>Подтверждение действия</span>
+            <h2 id="veyra-confirm-title">Вы точно хотите удалить?</h2>
+            <p id="veyra-confirm-text">Это действие нельзя будет отменить.</p>
+        </div>
+        <div class="veyra-confirm-actions">
+            <button type="button" class="veyra-confirm-cancel" data-confirm-cancel>Отмена</button>
+            <button type="button" class="veyra-confirm-submit" id="veyra-confirm-submit"><span class="material-symbols-rounded">delete</span><b>Удалить</b></button>
+        </div>
+    </section>
+</div>
+
+{% if user.is_authenticated %}
+<div class="share-modal" id="share-modal" aria-hidden="true">
+    <div class="share-modal-backdrop" data-share-close></div>
+    <section class="share-sheet" role="dialog" aria-modal="true" aria-labelledby="share-title">
+        <header class="share-sheet-header">
+            <div>
+                <span>Отправить друзьям</span>
+                <h2 id="share-title">Поделиться публикацией</h2>
+            </div>
+            <button type="button" class="share-close" data-share-close><span class="material-symbols-rounded">close</span></button>
+        </header>
+        <form id="share-form">
+            {% csrf_token %}
+            <div class="share-friends-list" id="share-friends-list"></div>
+            <div class="share-sheet-footer">
+                <button type="button" class="share-copy-link" id="share-copy-link"><span class="material-symbols-rounded">link</span><b>Копировать ссылку</b></button>
+                <button type="submit" class="share-send-button" disabled><span class="material-symbols-rounded">send</span><b>Отправить</b></button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endif %}
+
 <script>
+(() => {
+    const modal = document.getElementById("veyra-confirm");
+    const title = document.getElementById("veyra-confirm-title");
+    const text = document.getElementById("veyra-confirm-text");
+    const submit = document.getElementById("veyra-confirm-submit");
+    let resolver = null;
+
+    const close = result => {
+        if (!resolver) return;
+        const resolve = resolver;
+        resolver = null;
+        modal.classList.remove("active");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("veyra-confirm-open");
+        window.setTimeout(() => resolve(result), 180);
+    };
+
+    window.veyraConfirm = ({
+        title: nextTitle = "Вы точно хотите удалить?",
+        text: nextText = "Это действие нельзя будет отменить.",
+        confirmText = "Удалить"
+    } = {}) => {
+        if (resolver) close(false);
+        title.textContent = nextTitle;
+        text.textContent = nextText;
+        submit.querySelector("b").textContent = confirmText;
+        modal.classList.add("active");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("veyra-confirm-open");
+        window.setTimeout(() => submit.focus(), 30);
+        return new Promise(resolve => { resolver = resolve; });
+    };
+
+    modal.querySelectorAll("[data-confirm-cancel]").forEach(button => button.addEventListener("click", () => close(false)));
+    submit.addEventListener("click", () => close(true));
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && modal.classList.contains("active")) close(false);
+    });
+})();
+
 function toggleNotifications() {
     const box = document.getElementById('notifications-box');
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
@@ -151,7 +271,223 @@ document.addEventListener('click', function(event) {
         box.style.display = 'none';
     }
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const search = document.querySelector(".global-search");
+    if (!search) return;
+
+    const input = search.querySelector("input[name='q']");
+    const suggestions = search.querySelector(".search-suggestions");
+    let timer;
+    let controller;
+    let activeIndex = -1;
+
+    const closeSuggestions = () => {
+        suggestions.classList.remove("active");
+        input.setAttribute("aria-expanded", "false");
+        activeIndex = -1;
+    };
+
+    const setActive = index => {
+        const items = [...suggestions.querySelectorAll(".search-suggestion")];
+        if (!items.length) return;
+        activeIndex = (index + items.length) % items.length;
+        items.forEach((item, itemIndex) => item.classList.toggle("active", itemIndex === activeIndex));
+        items[activeIndex].scrollIntoView({block: "nearest"});
+    };
+
+    const renderResults = results => {
+        suggestions.replaceChildren();
+        if (!results.length) {
+            const empty = document.createElement("div");
+            empty.className = "search-suggestion-empty";
+            empty.textContent = "Ничего не найдено";
+            suggestions.append(empty);
+        } else {
+            results.forEach(result => {
+                const link = document.createElement("a");
+                const visual = document.createElement(["post", "hashtag"].includes(result.type) ? "div" : "img");
+                const copy = document.createElement("span");
+                const meta = document.createElement("span");
+                const badge = document.createElement("em");
+                const match = document.createElement("em");
+                const title = document.createElement("b");
+                const subtitle = document.createElement("small");
+                link.className = `search-suggestion search-suggestion-${result.type}`;
+                link.href = result.url;
+                link.setAttribute("role", "option");
+                visual.className = "search-suggestion-visual";
+                if (result.type === "post") {
+                    const preview = document.createElement(result.video ? "video" : "img");
+                    const avatar = document.createElement("img");
+                    preview.src = result.video || result.image;
+                    if (result.video) {
+                        preview.muted = true;
+                        preview.preload = "metadata";
+                        preview.playsInline = true;
+                    }
+                    avatar.src = result.avatar;
+                    avatar.className = "search-video-author";
+                    visual.append(preview, avatar);
+                    if (result.video) {
+                        link.addEventListener("mouseenter", () => preview.play().catch(() => {}));
+                        link.addEventListener("mouseleave", () => {
+                            preview.pause();
+                            preview.currentTime = 0;
+                        });
+                    }
+                } else if (result.type === "hashtag") {
+                    visual.textContent = "#";
+                } else visual.src = result.avatar;
+                meta.className = "search-suggestion-meta";
+                badge.className = "search-suggestion-badge";
+                match.className = "search-suggestion-match";
+                badge.textContent = result.badge;
+                match.textContent = result.match;
+                title.textContent = result.title;
+                subtitle.textContent = result.subtitle;
+                meta.append(badge);
+                if (result.match) meta.append(match);
+                meta.append(subtitle);
+                copy.append(title, meta);
+                link.append(visual, copy);
+                suggestions.append(link);
+            });
+        }
+        suggestions.classList.add("active");
+        input.setAttribute("aria-expanded", "true");
+        activeIndex = -1;
+    };
+
+    input.addEventListener("input", () => {
+        clearTimeout(timer);
+        controller?.abort();
+        const query = input.value.trim();
+        if (query.length < 3) {
+            closeSuggestions();
+            suggestions.replaceChildren();
+            return;
+        }
+        suggestions.innerHTML = '<div class="search-suggestion-empty">Ищем...</div>';
+        suggestions.classList.add("active");
+        timer = setTimeout(async () => {
+            controller = new AbortController();
+            try {
+                const url = `${search.dataset.suggestionsUrl}?q=${encodeURIComponent(query)}`;
+                const response = await fetch(url, {signal: controller.signal});
+                renderResults((await response.json()).results);
+            } catch (error) {
+                if (error.name !== "AbortError") closeSuggestions();
+            }
+        }, 250);
+    });
+
+    input.addEventListener("keydown", event => {
+        const items = [...suggestions.querySelectorAll(".search-suggestion")];
+        if (event.key === "ArrowDown" && items.length) { event.preventDefault(); setActive(activeIndex + 1); }
+        else if (event.key === "ArrowUp" && items.length) { event.preventDefault(); setActive(activeIndex - 1); }
+        else if (event.key === "Enter" && activeIndex >= 0) { event.preventDefault(); items[activeIndex].click(); }
+        else if (event.key === "Escape") closeSuggestions();
+    });
+
+    document.addEventListener("click", event => {
+        if (!search.contains(event.target)) closeSuggestions();
+    });
+});
 </script>
+
+{% if user.is_authenticated %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("share-modal");
+    const form = document.getElementById("share-form");
+    const list = document.getElementById("share-friends-list");
+    const sendButton = form?.querySelector(".share-send-button");
+    const copyButton = document.getElementById("share-copy-link");
+    let postId = null;
+
+    const closeShare = () => {
+        modal.classList.remove("active");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("share-open");
+    };
+
+    const updateSelection = () => {
+        const count = list.querySelectorAll("input:checked").length;
+        sendButton.disabled = count === 0;
+        sendButton.querySelector("b").textContent = count ? `Отправить · ${count}` : "Отправить";
+    };
+
+    const renderFriends = friends => {
+        list.replaceChildren();
+        if (!friends.length) {
+            const empty = document.createElement("div");
+            empty.className = "share-empty";
+            empty.innerHTML = '<span class="material-symbols-rounded">group_off</span><b>Нет доступных друзей</b><small>Публикацию можно отправить друзьям, которым она доступна.</small>';
+            list.append(empty);
+            return;
+        }
+        friends.forEach(friend => {
+            const label = document.createElement("label");
+            label.className = "share-friend";
+            label.innerHTML = `<input type="checkbox" name="recipients" value="${friend.id}"><span class="share-friend-avatar"><img src="${friend.avatar}" alt=""></span><b>@${friend.username}</b><span class="share-check material-symbols-rounded">check</span>`;
+            label.querySelector("input").addEventListener("change", updateSelection);
+            list.append(label);
+        });
+    };
+
+    const openShare = async id => {
+        postId = id;
+        list.innerHTML = '<div class="share-loading"><span class="material-symbols-rounded">progress_activity</span>Загружаем друзей...</div>';
+        modal.classList.add("active");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("share-open");
+        sendButton.disabled = true;
+        sendButton.querySelector("b").textContent = "Отправить";
+        try {
+            const response = await fetch(`/post/${postId}/share/friends/`);
+            if (!response.ok) throw new Error();
+            renderFriends((await response.json()).friends);
+        } catch {
+            list.innerHTML = '<div class="share-empty"><b>Не удалось загрузить друзей</b><small>Попробуйте открыть окно ещё раз.</small></div>';
+        }
+    };
+
+    document.addEventListener("click", event => {
+        const shareButton = event.target.closest(".share-post-btn");
+        if (shareButton) openShare(shareButton.dataset.postId);
+        if (event.target.closest("[data-share-close]")) closeShare();
+    });
+
+    copyButton?.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(new URL(`/post/${postId}/`, location.origin).href);
+        copyButton.querySelector("b").textContent = "Ссылка скопирована";
+        setTimeout(() => copyButton.querySelector("b").textContent = "Копировать ссылку", 1800);
+    });
+
+    form?.addEventListener("submit", async event => {
+        event.preventDefault();
+        sendButton.disabled = true;
+        const response = await fetch(`/post/${postId}/share/`, {
+            method: "POST",
+            body: new FormData(form),
+            headers: {"X-Requested-With": "XMLHttpRequest"}
+        });
+        if (!response.ok) {
+            updateSelection();
+            return;
+        }
+        const data = await response.json();
+        sendButton.querySelector("b").textContent = `Отправлено · ${data.sent}`;
+        setTimeout(closeShare, 650);
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && modal.classList.contains("active")) closeShare();
+    });
+});
+</script>
+{% endif %}
 
 </body>
 </html>

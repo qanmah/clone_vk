@@ -1,25 +1,372 @@
 {% extends 'base.html' %}
+{% block title %}New post{% endblock %}
 
 {% block content %}
-
 <div class="create-post-page">
-
-    <form method="post" enctype="multipart/form-data" class="create-post-card">
+    <form method="post" enctype="multipart/form-data" class="create-post-card" id="create-post-form">
         {% csrf_token %}
 
-        <h2>Создать пост</h2>
+        <div class="create-post-heading">
+            <div>
+                <span>Новая публикация</span>
+                <h2>Загрузить видео или фотографии</h2>
+            </div>
+            <a href="{% url 'home' %}" aria-label="Закрыть">
+                <span class="material-symbols-rounded">close</span>
+            </a>
+        </div>
 
-        <label>Видео</label>
-        <input type="file" name="video" accept="video/*" required>
+        <div class="media-dropzone" id="media-dropzone">
+            {{ form.video }}
+            {{ form.photos }}
+            <input type="file" id="media-picker" accept="image/*,video/*" multiple>
+            <video id="video-preview" controls playsinline hidden></video>
+            <div class="media-dropzone-copy" id="media-dropzone-copy">
+                <span class="material-symbols-rounded">add_to_photos</span>
+                <strong>Перетащите фото или видео</strong>
+                <small>Можно загрузить одно видео или до 10 фотографий</small>
+                <button type="button" id="choose-media">Выбрать файлы</button>
+            </div>
+            <div class="photo-previews" id="photo-previews"></div>
+        </div>
+        <div class="media-error" id="media-error" hidden></div>
+        {% if form.video.errors %}<div class="form-errors">{{ form.video.errors }}</div>{% endif %}
+        {% if form.photos.errors %}<div class="form-errors">{{ form.photos.errors }}</div>{% endif %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
 
-        <label>Описание</label>
-        <textarea name="description" placeholder="Текст, #хэштеги, @друзья"></textarea>
+        <div class="photo-audio-field" id="photo-audio-field" hidden>
+            <label for="{{ form.audio.id_for_label }}"><span class="material-symbols-rounded">music_note</span> Свой звук для фотографий</label>
+            {{ form.audio }}
+            <audio id="audio-preview" controls hidden></audio>
+            <small>Необязательно. MP3, WAV, OGG, M4A, AAC или FLAC, до 30 МБ.</small>
+        </div>
+        {% if form.audio.errors %}<div class="form-errors">{{ form.audio.errors }}</div>{% endif %}
 
-        <button type="submit">
+        <div class="description-editor" data-suggestions-url="{% url 'description_suggestions' %}">
+            <div class="description-editor-head">
+                <label for="{{ form.description.id_for_label }}">Описание</label>
+                <div class="description-tools">
+                    <button type="button" data-description-trigger="#"><span class="material-symbols-rounded">tag</span>Хештег</button>
+                    <button type="button" data-description-trigger="@"><span class="material-symbols-rounded">alternate_email</span>Упомянуть</button>
+                </div>
+            </div>
+            {{ form.description }}
+            <div class="description-suggestions" id="description-suggestions"></div>
+            <div class="description-counter"><span id="description-count">0</span>/2000</div>
+        </div>
+        {% if form.description.errors %}<div class="form-errors">{{ form.description.errors }}</div>{% endif %}
+
+        <label for="{{ form.visibility.id_for_label }}">Кто увидит публикацию</label>
+        {{ form.visibility }}
+
+        <button type="submit" class="publish-btn" id="publish-btn">
+            <span class="material-symbols-rounded">publish</span>
             Опубликовать
         </button>
     </form>
-
 </div>
 
+<script>
+const videoInput = document.getElementById("id_video");
+const photoInput = document.getElementById("id_photos");
+const photoPreviews = document.getElementById("photo-previews");
+const mediaDropzone = document.getElementById("media-dropzone");
+const chooseMedia = document.getElementById("choose-media");
+const mediaPicker = document.getElementById("media-picker");
+const mediaError = document.getElementById("media-error");
+const audioInput = document.getElementById("id_audio");
+const audioPreview = document.getElementById("audio-preview");
+const photoAudioField = document.getElementById("photo-audio-field");
+const preview = document.getElementById("video-preview");
+const dropzoneCopy = document.getElementById("media-dropzone-copy");
+const description = document.getElementById("id_description");
+const descriptionEditor = document.querySelector(".description-editor");
+const descriptionSuggestions = document.getElementById("description-suggestions");
+const counter = document.getElementById("description-count");
+const form = document.getElementById("create-post-form");
+const publishButton = document.getElementById("publish-btn");
+let suggestionTimer;
+let suggestionController;
+let activeSuggestion = -1;
+let activeToken = null;
+let suggestionRequestId = 0;
+
+function updateCounter() {
+    counter.textContent = description.value.length;
+}
+
+function closeDescriptionSuggestions() {
+    descriptionSuggestions.classList.remove("active");
+    descriptionSuggestions.replaceChildren();
+    activeSuggestion = -1;
+    activeToken = null;
+}
+
+function currentDescriptionToken() {
+    const beforeCursor = description.value.slice(0, description.selectionStart);
+    const match = beforeCursor.match(/(?:^|\s)([@#])([\p{L}\p{N}_-]*)$/u);
+    if (!match) return null;
+    return {
+        kind: match[1] === "@" ? "mention" : "hashtag",
+        query: match[2],
+        start: description.selectionStart - match[1].length - match[2].length,
+        end: description.selectionStart,
+    };
+}
+
+function insertDescriptionSuggestion(value) {
+    if (!activeToken) return;
+    description.setRangeText(`${value} `, activeToken.start, activeToken.end, "end");
+    description.focus();
+    updateCounter();
+    closeDescriptionSuggestions();
+}
+
+function renderDescriptionSuggestions(results, kind) {
+    descriptionSuggestions.replaceChildren();
+    if (!results.length) {
+        const empty = document.createElement("div");
+        empty.className = "description-suggestion-empty";
+        empty.textContent = kind === "hashtag" ? "Новый хештег будет создан после публикации" : "Пользователи не найдены";
+        descriptionSuggestions.append(empty);
+    } else {
+        results.forEach(result => {
+            const button = document.createElement("button");
+            const visual = document.createElement(result.avatar ? "img" : "span");
+            const copy = document.createElement("span");
+            const title = document.createElement("b");
+            const subtitle = document.createElement("small");
+            button.type = "button";
+            button.className = "description-suggestion";
+            visual.className = "description-suggestion-visual";
+            if (result.avatar) visual.src = result.avatar;
+            else visual.textContent = "#";
+            title.textContent = result.title;
+            subtitle.textContent = result.subtitle;
+            copy.append(title, subtitle);
+            button.append(visual, copy);
+            button.addEventListener("click", () => insertDescriptionSuggestion(result.value));
+            descriptionSuggestions.append(button);
+        });
+    }
+    descriptionSuggestions.classList.add("active");
+    activeSuggestion = -1;
+}
+
+function showDescriptionSuggestionsLoading(kind) {
+    descriptionSuggestions.replaceChildren();
+    const loading = document.createElement("div");
+    loading.className = "description-suggestion-loading";
+    loading.innerHTML = `<span class="material-symbols-rounded">${kind === "mention" ? "alternate_email" : "tag"}</span><b>${kind === "mention" ? "Выберите пользователя" : "Выберите или создайте хештег"}</b><i></i>`;
+    descriptionSuggestions.append(loading);
+    descriptionSuggestions.classList.add("active");
+    activeSuggestion = -1;
+}
+
+async function updateDescriptionSuggestions() {
+    clearTimeout(suggestionTimer);
+    suggestionController?.abort();
+    activeToken = currentDescriptionToken();
+    if (!activeToken) {
+        closeDescriptionSuggestions();
+        return;
+    }
+    const token = {...activeToken};
+    const requestId = ++suggestionRequestId;
+    showDescriptionSuggestionsLoading(token.kind);
+    const loadSuggestions = async () => {
+        suggestionController = new AbortController();
+        const url = `${descriptionEditor.dataset.suggestionsUrl}?kind=${token.kind}&q=${encodeURIComponent(token.query)}`;
+        try {
+            const response = await fetch(url, {signal: suggestionController.signal});
+            if (requestId !== suggestionRequestId || !currentDescriptionToken()) return;
+            renderDescriptionSuggestions((await response.json()).results, token.kind);
+        } catch (error) {
+            if (error.name !== "AbortError") closeDescriptionSuggestions();
+        }
+    };
+    if (!token.query) loadSuggestions();
+    else suggestionTimer = setTimeout(loadSuggestions, 90);
+}
+
+function showMediaError(message) {
+    mediaError.textContent = message;
+    mediaError.hidden = false;
+    mediaDropzone.classList.add("has-error");
+}
+
+function clearMediaError() {
+    mediaError.hidden = true;
+    mediaError.textContent = "";
+    mediaDropzone.classList.remove("has-error");
+}
+
+function clearMediaSelection() {
+    videoInput.value = "";
+    photoInput.value = "";
+    audioInput.value = "";
+    preview.pause();
+    preview.hidden = true;
+    preview.removeAttribute("src");
+    photoPreviews.replaceChildren();
+    audioPreview.pause();
+    audioPreview.hidden = true;
+    audioPreview.removeAttribute("src");
+    photoAudioField.hidden = true;
+    dropzoneCopy.hidden = false;
+}
+
+function renderVideoPreview() {
+    const file = videoInput.files[0];
+    if (!file) return;
+    clearMediaError();
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    dropzoneCopy.hidden = true;
+    photoInput.value = "";
+    audioInput.value = "";
+    photoPreviews.replaceChildren();
+    photoAudioField.hidden = true;
+}
+
+function renderPhotoPreviews() {
+    clearMediaError();
+    photoPreviews.replaceChildren();
+    [...photoInput.files].forEach((file, index) => {
+        const item = document.createElement("div");
+        const image = document.createElement("img");
+        const number = document.createElement("span");
+        item.className = "photo-preview-item";
+        image.src = URL.createObjectURL(file);
+        number.textContent = index + 1;
+        item.append(image, number);
+        photoPreviews.append(item);
+    });
+    if (photoInput.files.length) {
+        videoInput.value = "";
+        preview.hidden = true;
+        preview.removeAttribute("src");
+        dropzoneCopy.hidden = true;
+        photoAudioField.hidden = false;
+    }
+}
+
+function assignFiles(input, files) {
+    const transfer = new DataTransfer();
+    files.forEach(file => transfer.items.add(file));
+    input.files = transfer.files;
+    input.dispatchEvent(new Event("change", {bubbles: true}));
+}
+
+const isVideoFile = file => file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|ogg)$/i.test(file.name);
+const isImageFile = file => file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+
+function acceptMediaFiles(files) {
+    const photos = files.filter(isImageFile);
+    const videos = files.filter(isVideoFile);
+    const unsupported = files.filter(file => !isImageFile(file) && !isVideoFile(file));
+
+    if (photos.length && videos.length) {
+        clearMediaSelection();
+        showMediaError("Нельзя одновременно загрузить фотографии и видео. Выберите только один тип.");
+        return;
+    }
+    if (unsupported.length) {
+        showMediaError("Некоторые файлы не поддерживаются.");
+        return;
+    }
+    if (videos.length > 1) {
+        showMediaError("В одну публикацию можно загрузить только одно видео.");
+        return;
+    }
+    if (photos.length > 10) {
+        showMediaError("Можно загрузить не больше 10 фотографий.");
+        return;
+    }
+    if (videos.length) assignFiles(videoInput, videos);
+    else if (photos.length) assignFiles(photoInput, photos);
+}
+
+videoInput.addEventListener("change", renderVideoPreview);
+photoInput.addEventListener("change", renderPhotoPreviews);
+audioInput.addEventListener("change", () => {
+    const file = audioInput.files[0];
+    if (!file) {
+        audioPreview.hidden = true;
+        return;
+    }
+    audioPreview.src = URL.createObjectURL(file);
+    audioPreview.hidden = false;
+});
+
+chooseMedia.addEventListener("click", () => mediaPicker.click());
+mediaPicker.addEventListener("change", () => {
+    acceptMediaFiles([...mediaPicker.files]);
+    mediaPicker.value = "";
+});
+mediaDropzone.addEventListener("dragenter", event => {
+    event.preventDefault();
+    mediaDropzone.classList.add("drag-active");
+});
+mediaDropzone.addEventListener("dragover", event => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+});
+mediaDropzone.addEventListener("dragleave", event => {
+    event.preventDefault();
+    if (!mediaDropzone.contains(event.relatedTarget)) mediaDropzone.classList.remove("drag-active");
+});
+mediaDropzone.addEventListener("drop", event => {
+    event.preventDefault();
+    mediaDropzone.classList.remove("drag-active");
+    acceptMediaFiles([...event.dataTransfer.files]);
+});
+
+description.addEventListener("input", () => {
+    updateCounter();
+    updateDescriptionSuggestions();
+});
+description.addEventListener("click", updateDescriptionSuggestions);
+description.addEventListener("keyup", event => {
+    if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(event.key)) return;
+    updateDescriptionSuggestions();
+});
+description.addEventListener("select", updateDescriptionSuggestions);
+description.addEventListener("focus", updateDescriptionSuggestions);
+description.addEventListener("keydown", event => {
+    const items = [...descriptionSuggestions.querySelectorAll(".description-suggestion")];
+    if (event.key === "ArrowDown" && items.length) {
+        event.preventDefault();
+        activeSuggestion = (activeSuggestion + 1) % items.length;
+    } else if (event.key === "ArrowUp" && items.length) {
+        event.preventDefault();
+        activeSuggestion = (activeSuggestion - 1 + items.length) % items.length;
+    } else if (event.key === "Enter" && activeSuggestion >= 0) {
+        event.preventDefault();
+        items[activeSuggestion].click();
+        return;
+    } else if (event.key === "Escape") {
+        closeDescriptionSuggestions();
+        return;
+    } else return;
+    items.forEach((item, index) => item.classList.toggle("active", index === activeSuggestion));
+    items[activeSuggestion]?.scrollIntoView({block: "nearest"});
+});
+document.querySelectorAll("[data-description-trigger]").forEach(button => {
+    button.addEventListener("click", () => {
+        const symbol = button.dataset.descriptionTrigger;
+        const needsSpace = description.selectionStart > 0 && !/\s/.test(description.value[description.selectionStart - 1]);
+        description.setRangeText(`${needsSpace ? " " : ""}${symbol}`, description.selectionStart, description.selectionEnd, "end");
+        description.focus();
+        updateCounter();
+        updateDescriptionSuggestions();
+    });
+});
+descriptionSuggestions.addEventListener("mousedown", event => event.preventDefault());
+form.addEventListener("submit", () => {
+    publishButton.disabled = true;
+    publishButton.innerHTML = '<span class="material-symbols-rounded">progress_activity</span> Загружаем...';
+});
+updateCounter();
+</script>
 {% endblock %}

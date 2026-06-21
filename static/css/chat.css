@@ -350,6 +350,81 @@ hr {
     opacity: 1;
 }
 
+.shared-post-card {
+    width: min(350px, 62vw);
+    display: block;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 19px;
+    background: linear-gradient(145deg, rgba(15, 27, 50, .96), rgba(5, 10, 22, .92));
+    color: #fff;
+    text-decoration: none;
+    transition: transform .18s ease, border-color .18s ease;
+}
+
+.shared-post-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(147,197,253,.5);
+}
+
+.shared-post-card video,
+.shared-post-card > img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    display: block;
+    object-fit: cover;
+    background: #020617;
+}
+
+.shared-post-copy {
+    padding: 12px 13px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.shared-post-copy b {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    letter-spacing: .01em;
+}
+
+.shared-post-copy b .material-symbols-rounded {
+    color: #93c5fd;
+    font-size: 18px;
+}
+
+.shared-post-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(226,232,240,.76);
+    font-size: 12px;
+}
+
+.shared-post-stats > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.shared-post-stats .material-symbols-rounded {
+    color: #94a3b8;
+    font-size: 15px;
+}
+
+.shared-post-stats em {
+    margin-left: auto;
+    color: #bfdbfe;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
 /* ===== REPLY INSIDE MESSAGE ===== */
 
 .reply-preview {

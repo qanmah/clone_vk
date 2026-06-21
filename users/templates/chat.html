@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block title %}Chats{% endblock %}
 
 {% block content %}
 
@@ -27,7 +28,9 @@
 
                         {% if friend.last_message %}
                             <div class="last-message">
-                                {% if friend.last_message.sender == request.user %}
+                                {% if friend.last_message.shared_post %}
+                                    {% if friend.last_message.sender == request.user %}Вы: {% endif %}Публикация
+                                {% elif friend.last_message.sender == request.user %}
                                     Вы: {{ friend.last_message.text|truncatechars:28 }}
                                 {% else %}
                                     {{ friend.last_message.text|truncatechars:28 }}
@@ -118,6 +121,7 @@
                         <div class="message-bubble {% if msg.sender == request.user %}mine{% else %}other{% endif %}"
                              data-id="{{ msg.id }}"
                              data-text="{{ msg.text|escapejs }}"
+                             data-author="{{ msg.sender.username|escapejs }}"
                              data-mine="{% if msg.sender == request.user %}1{% else %}0{% endif %}"
                              oncontextmenu="openMessageMenu(event, this)">
 
@@ -125,7 +129,7 @@
                                 <div class="reply-preview">
                                     <div class="reply-top">
                                         <span class="reply-author">
-                                            {{ msg.reply_to.sender.username }}
+                                            @{{ msg.reply_to.sender.username }}
                                         </span>
                                     </div>
 
@@ -143,6 +147,24 @@
 
                             {% if msg.image %}
                                 <img src="{{ msg.image.url }}" class="chat-image">
+                            {% endif %}
+
+                            {% if msg.shared_post %}
+                                <a href="{% url 'post_detail' msg.shared_post.id %}" class="shared-post-card">
+                                    {% if msg.shared_post.video %}
+                                        <video muted playsinline preload="metadata"><source src="{{ msg.shared_post.video.url }}"></video>
+                                    {% else %}
+                                        {% with photo=msg.shared_post.images.first %}<img src="{{ photo.image.url }}" alt="Фотография">{% endwith %}
+                                    {% endif %}
+                                    <span class="shared-post-copy">
+                                        <b><span class="material-symbols-rounded">{% if msg.shared_post.video %}play_circle{% else %}photo_library{% endif %}</span> @{{ msg.shared_post.author.username }}</b>
+                                        <span class="shared-post-stats">
+                                            <span><span class="material-symbols-rounded">visibility</span>{{ msg.shared_post.views }}</span>
+                                            <span><span class="material-symbols-rounded">favorite</span>{{ msg.shared_post.likes.count }}</span>
+                                            <em>Открыть</em>
+                                        </span>
+                                    </span>
+                                </a>
                             {% endif %}
 
                             <div class="message-meta">
@@ -173,7 +195,7 @@
                 </div>
 
                 <div class="reply-panel-content">
-                    <div class="reply-panel-title">Ответ на сообщение</div>
+                    <div id="reply-title" class="reply-panel-title">Ответ на сообщение</div>
                     <div id="reply-text" class="reply-panel-text"></div>
                 </div>
 
@@ -259,6 +281,7 @@
 
     const replyPanel = document.getElementById("reply-panel");
     const replyText = document.getElementById("reply-text");
+    const replyTitle = document.getElementById("reply-title");
 
     const messageMenu = document.getElementById("message-menu");
     const menuEdit = document.getElementById("menu-edit");
@@ -279,6 +302,7 @@
 
     let currentMessageId = null;
     let currentMessageText = "";
+    let currentMessageAuthor = "";
     let currentMessageMine = false;
 
     let modalCallback = null;
@@ -374,6 +398,9 @@
     function replyToMessage(button) {
         replyToId = button.dataset.id;
         replyText.textContent = button.dataset.text.slice(0, 80);
+        replyTitle.textContent = button.dataset.author
+            ? `Ответ для @${button.dataset.author}`
+            : "Ответ на сообщение";
 
         replyPanel.classList.add("active");
         input.focus();
@@ -382,6 +409,7 @@
     function cancelReply() {
         replyToId = null;
         replyText.textContent = "";
+        replyTitle.textContent = "Ответ на сообщение";
         replyPanel.classList.remove("active");
     }
 
@@ -533,6 +561,72 @@
         }, 1200);
     });
 
+    function appendSharedPost(data) {
+        const isMine = data.user === currentUsername;
+        addDateSeparatorIfNeeded(data.created_date);
+
+        const wrapper = document.createElement("div");
+        const bubble = document.createElement("div");
+        const card = document.createElement("a");
+        const media = document.createElement(data.media_type === "video" ? "video" : "img");
+        const copy = document.createElement("span");
+        const title = document.createElement("b");
+        const titleIcon = document.createElement("span");
+        const stats = document.createElement("span");
+        const views = document.createElement("span");
+        const likes = document.createElement("span");
+        const action = document.createElement("em");
+        const meta = document.createElement("div");
+        const time = document.createElement("span");
+
+        wrapper.className = "message-row " + (isMine ? "mine" : "other");
+        bubble.className = "message-bubble " + (isMine ? "mine" : "other");
+        bubble.dataset.id = data.message_id;
+        bubble.dataset.text = "";
+        bubble.dataset.mine = isMine ? "1" : "0";
+        bubble.oncontextmenu = event => openMessageMenu(event, bubble);
+
+        card.className = "shared-post-card";
+        card.href = data.post_url;
+        media.src = data.media_url;
+        if (data.media_type === "video") {
+            media.muted = true;
+            media.playsInline = true;
+            media.preload = "metadata";
+        } else {
+            media.alt = "Фотография";
+        }
+        copy.className = "shared-post-copy";
+        titleIcon.className = "material-symbols-rounded";
+        titleIcon.textContent = data.media_type === "video" ? "play_circle" : "photo_library";
+        title.append(titleIcon, document.createTextNode(`@${data.post_author}`));
+        stats.className = "shared-post-stats";
+        views.innerHTML = `<span class="material-symbols-rounded">visibility</span>${data.views}`;
+        likes.innerHTML = `<span class="material-symbols-rounded">favorite</span>${data.likes}`;
+        action.textContent = "Открыть";
+        stats.append(views, likes, action);
+        copy.append(title, stats);
+        card.append(media, copy);
+
+        meta.className = "message-meta";
+        time.className = "message-time";
+        time.textContent = data.created_at;
+        meta.append(time);
+        if (isMine) {
+            const checks = document.createElement("span");
+            checks.className = `message-checks ${data.is_read ? "read" : ""}`;
+            checks.textContent = data.is_read ? "done_all" : "done";
+            meta.append(checks);
+        }
+
+        bubble.append(card, meta);
+        wrapper.append(bubble);
+        box.append(wrapper);
+        box.scrollTop = box.scrollHeight;
+        updateRealStickyDateAnimation();
+        if (!isMine) markVisibleMessagesAsRead();
+    }
+
     socket.onmessage = function(e) {
         const data = JSON.parse(e.data);
 
@@ -630,6 +724,11 @@
             return;
         }
 
+        if (data.type === "shared_post") {
+            appendSharedPost(data);
+            return;
+        }
+
         const isMine = data.user === currentUsername;
 
         addDateSeparatorIfNeeded(data.created_date);
@@ -642,6 +741,7 @@
 
         bubble.dataset.id = data.message_id;
         bubble.dataset.text = data.message;
+        bubble.dataset.author = data.user;
         bubble.dataset.mine = isMine ? "1" : "0";
 
         bubble.oncontextmenu = function(event) {
@@ -655,7 +755,7 @@
                 <div class="reply-preview">
                     <div class="reply-top">
                         <span class="reply-author">
-                            ${data.reply_user || data.user || "Пользователь"}
+                            @${data.reply_user || data.user || "Пользователь"}
                         </span>
                     </div>
 
@@ -739,8 +839,13 @@
         event.preventDefault();
         event.stopPropagation();
 
+        if (messageMenu.parentElement !== document.body) {
+            document.body.appendChild(messageMenu);
+        }
+
         currentMessageId = element.dataset.id;
         currentMessageText = element.dataset.text || "";
+        currentMessageAuthor = element.dataset.author || "";
         currentMessageMine = element.dataset.mine === "1";
 
         menuDelete.href = "/message/" + currentMessageId + "/delete/";
@@ -754,7 +859,10 @@
             menuDelete.style.display = "none";
         }
 
+        messageMenu.style.visibility = "hidden";
         messageMenu.style.display = "block";
+        messageMenu.style.left = "0px";
+        messageMenu.style.top = "0px";
 
         const menuWidth = messageMenu.offsetWidth;
         const menuHeight = messageMenu.offsetHeight;
@@ -772,6 +880,7 @@
 
         messageMenu.style.left = x + "px";
         messageMenu.style.top = y + "px";
+        messageMenu.style.visibility = "visible";
     }
 
     menuEdit.onclick = function() {
@@ -780,7 +889,8 @@
         openEditMessageFromButton({
             dataset: {
                 id: currentMessageId,
-                text: currentMessageText
+                text: currentMessageText,
+                author: currentMessageAuthor
             }
         });
     };
@@ -791,7 +901,8 @@
         replyToMessage({
             dataset: {
                 id: currentMessageId,
-                text: currentMessageText
+                text: currentMessageText,
+                author: currentMessageAuthor
             }
         });
     };

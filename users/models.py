@@ -6,6 +6,25 @@ from django.conf import settings
 from django.utils import timezone
 import os
 
+VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".m4v", ".ogg"}
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac"}
+
+
+def post_video_path(instance, filename):
+    extension = os.path.splitext(filename)[1].lower()
+    return f"post_videos/{instance.author_id}/{timezone.now():%Y/%m}/{timezone.now().timestamp():.0f}{extension}"
+
+
+def post_image_path(instance, filename):
+    extension = os.path.splitext(filename)[1].lower()
+    return f"post_images/{instance.post.author_id}/{timezone.now():%Y/%m}/{timezone.now().timestamp():.0f}_{instance.order}{extension}"
+
+
+def post_audio_path(instance, filename):
+    extension = os.path.splitext(filename)[1].lower()
+    return f"post_audio/{instance.author_id}/{timezone.now():%Y/%m}/{timezone.now().timestamp():.0f}{extension}"
+
 
 def user_avatar_path(instance, filename):
     ext = filename.split('.')[-1]
@@ -57,18 +76,43 @@ class FriendRequest(models.Model):
         return f"{self.from_user} -> {self.to_user} ({self.status})"
 
 class Post(models.Model):
+    VISIBILITY_CHOICES = (
+        ("public", "Всем"),
+        ("followers", "Подписчикам"),
+        ("private", "Только мне"),
+    )
+
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
-    video = models.FileField(upload_to="post_videos/")
+    video = models.FileField(upload_to=post_video_path, blank=True, null=True)
+    audio = models.FileField(upload_to=post_audio_path, blank=True, null=True)
     views = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)
+    visibility = models.CharField(max_length=12, choices=VISIBILITY_CHOICES, default="public")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
 
     def __str__(self):
         return f"Post by {self.author.username}"
-    
+
+    @property
+    def is_video(self):
+        return bool(self.video)
+
+
+class PostImage(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to=post_image_path)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("order", "id")
+
 class PostLike(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="post_likes")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("user", "post")
@@ -76,6 +120,13 @@ class PostLike(models.Model):
 class PostComment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="replies",
+        null=True,
+        blank=True,
+    )
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -98,6 +149,13 @@ class Message(models.Model):
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
 
     text = models.TextField(blank=True)
+    shared_post = models.ForeignKey(
+        Post,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="shared_messages"
+    )
 
     image = models.ImageField(
         upload_to="chat_images/",
@@ -159,3 +217,17 @@ def delete_avatar_on_delete(sender, instance, **kwargs):
             file_path = instance.avatar.path
             if os.path.isfile(file_path):
                 os.remove(file_path)
+
+
+@receiver(post_delete, sender=Post)
+def delete_video_on_post_delete(sender, instance, **kwargs):
+    if instance.video and instance.video.name:
+        instance.video.delete(save=False)
+    if instance.audio and instance.audio.name:
+        instance.audio.delete(save=False)
+
+
+@receiver(post_delete, sender=PostImage)
+def delete_image_on_post_image_delete(sender, instance, **kwargs):
+    if instance.image and instance.image.name:
+        instance.image.delete(save=False)
