@@ -1,7 +1,139 @@
-<h2>Вход</h2>
+{% extends 'base.html' %}
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Войти</button>
-</form>
+{% block content %}
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div class="auth-header">
+            <div class="auth-icon">
+                <span class="material-symbols-rounded">login</span>
+            </div>
+
+            <h1>Вход</h1>
+            <p>Вернись в свой аккаунт</p>
+        </div>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+
+            <div class="auth-fields">
+
+                <div class="auth-input-group">
+                    {{ form.username }}
+                    <span>Username</span>
+                </div>
+
+                <div class="auth-input-group password-input-wrapper">
+                    {{ form.password }}
+                    <span>Пароль</span>
+
+                    <button type="button"
+                            class="toggle-password-btn"
+                            onclick="togglePassword('id_password', this)">
+                        <span class="material-symbols-rounded">visibility</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <button type="submit" class="auth-btn">
+                <span class="material-symbols-rounded">arrow_forward</span>
+                Войти
+            </button>
+        </form>
+
+        <div class="auth-bottom">
+            Нет аккаунта?
+            <a href="/register/">Зарегистрироваться</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.querySelectorAll(".auth-form input").forEach(input => {
+    input.placeholder = " ";
+});
+
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+
+    if (!input) return;
+
+    const icon = button.querySelector(".material-symbols-rounded");
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "visibility_off";
+    } else {
+        input.type = "password";
+        icon.textContent = "visibility";
+    }
+}
+
+const authForm = document.querySelector(".auth-form");
+
+function showFieldError(input, text) {
+    if (!input) return;
+
+    let error = input.parentElement.querySelector(".auth-field-error");
+
+    if (!error) {
+        error = document.createElement("div");
+        error.className = "auth-field-error";
+        input.parentElement.appendChild(error);
+    }
+
+    error.textContent = text;
+    error.classList.add("active");
+
+    input.classList.add("invalid");
+}
+
+function clearFieldError(input) {
+    if (!input) return;
+
+    const error = input.parentElement.querySelector(".auth-field-error");
+
+    if (error) {
+        error.classList.remove("active");
+    }
+
+    input.classList.remove("invalid");
+}
+
+document.querySelectorAll(".auth-form input").forEach(input => {
+
+    input.addEventListener("input", () => {
+        clearFieldError(input);
+    });
+
+});
+
+authForm.addEventListener("submit", function(event) {
+
+    let hasError = false;
+
+    document.querySelectorAll(".auth-form input").forEach(input => {
+
+        if (input.type === "hidden") return;
+
+        if (input.value.trim() === "") {
+
+            hasError = true;
+
+            showFieldError(
+                input,
+                "Заполни это поле"
+            );
+        }
+    });
+
+    if (hasError) {
+        event.preventDefault();
+    }
+});
+</script>
+
+{% endblock %}

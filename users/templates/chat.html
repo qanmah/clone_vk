@@ -2,476 +2,6 @@
 
 {% block content %}
 
-<style>
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
-
-hr {
-    display: none;
-}
-
-.chat-page {
-    display: flex;
-    width: 100%;
-    height: calc(100vh - 60px);
-
-    background: #111;
-    color: white;
-
-    font-family: Arial, sans-serif;
-
-    overflow: hidden;
-}
-
-.chat-sidebar {
-    width: 280px;
-
-    height: 100%;
-
-    border-right: 1px solid #333;
-
-    padding: 15px;
-
-    overflow-y: auto;
-
-    background: #161616;
-
-    box-sizing: border-box;
-}
-
-.friend-link {
-    display: block;
-
-    padding: 12px;
-
-    margin-bottom: 10px;
-
-    background: #1f1f1f;
-
-    border-radius: 12px;
-
-    color: white;
-
-    text-decoration: none;
-}
-
-.chat-main {
-    flex: 1;
-
-    height: 100%;
-
-    display: flex;
-
-    flex-direction: column;
-
-    min-width: 0;
-
-    overflow: hidden;
-}
-
-.chat-header {
-    padding: 10px 10px;
-
-    border-bottom: 1px solid #333;
-
-    background: #181818;
-
-    flex-shrink: 0;
-}
-
-.chat-header h2 {
-    margin: 0;
-    font-size: 17px;
-    line-height: 1.2;
-}
-
-.online-status {
-    font-size: 11px;
-    opacity: 0.6;
-    margin-top: 2px;
-}
-
-.chat-box {
-    flex: 1;
-
-    min-height: 0;
-
-    overflow-y: auto;
-
-    padding: 15px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 10px;
-}
-
-.message-row {
-    display: flex;
-}
-
-.message-row.mine {
-    justify-content: flex-end;
-}
-
-.message-row.other {
-    justify-content: flex-start;
-}
-
-.message-bubble {
-    max-width: 60%;
-
-    padding: 10px 14px;
-
-    border-radius: 14px;
-
-    word-wrap: break-word;
-}
-
-.message-bubble.mine {
-    background: #0077ff;
-}
-
-.message-bubble.other {
-    background: #2a2a2a;
-}
-
-.message-time {
-    font-size: 11px;
-
-    opacity: 0.7;
-
-    margin-top: 5px;
-}
-
-.chat-input {
-    flex-shrink: 0;
-
-    display: flex;
-
-    gap: 10px;
-
-    padding: 15px;
-
-    border-top: 1px solid #333;
-
-    background: #181818;
-
-    width: 100%;
-
-    box-sizing: border-box;
-}
-
-.chat-input input {
-    flex: 1;
-
-    min-width: 0;
-
-    width: 100%;
-
-    padding: 12px;
-
-    border: none;
-
-    border-radius: 10px;
-
-    background: #1f1f1f;
-
-    color: white;
-
-    outline: none;
-
-    box-sizing: border-box;
-}
-
-.chat-input button {
-    flex-shrink: 0;
-
-    padding: 12px 20px;
-
-    border: none;
-
-    border-radius: 10px;
-
-    background: #0077ff;
-
-    color: white;
-
-    cursor: pointer;
-}
-
-.empty-chat {
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    height: 100%;
-
-    font-size: 24px;
-
-    opacity: 0.7;
-}
-
-.friend-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-}
-
-.last-message {
-    margin-top: 5px;
-    font-size: 13px;
-    opacity: 0.65;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.last-message.empty {
-    opacity: 0.35;
-}
-
-.unread-badge {
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: #0077ff;
-    color: white;
-    font-size: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.typing-status {
-    font-size: 13px;
-    opacity: 0.6;
-    margin-top: 4px;
-    height: 16px;
-}
-
-.online-status {
-    font-size: 13px;
-    opacity: 0.6;
-    margin-top: 3px;
-}
-
-.delete-message {
-    display: inline-block;
-    margin-top: 5px;
-    font-size: 11px;
-    color: white;
-    opacity: 0.5;
-    text-decoration: none;
-}
-
-.delete-message:hover {
-    opacity: 1;
-    text-decoration: underline;
-}
-
-.edit-message {
-    display: inline-block;
-    margin-top: 5px;
-    margin-left: 8px;
-    font-size: 11px;
-    color: white;
-    opacity: 0.5;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-
-.edit-message:hover {
-    opacity: 1;
-    text-decoration: underline;
-}
-
-.reply-preview {
-    background: rgba(255,255,255,0.12);
-    border-left: 3px solid #fff;
-    padding: 6px 8px;
-    margin-bottom: 6px;
-    border-radius: 6px;
-    font-size: 12px;
-    opacity: 0.85;
-}
-
-.reply-panel {
-    display: none;
-    padding: 10px 15px;
-    background: #202020;
-    border-top: 1px solid #333;
-    font-size: 13px;
-}
-
-.reply-panel.active {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.reply-button {
-    display: inline-block;
-    margin-top: 5px;
-    margin-left: 8px;
-    font-size: 11px;
-    color: white;
-    opacity: 0.5;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-
-.reply-button:hover {
-    opacity: 1;
-    text-decoration: underline;
-}
-
-.cancel-reply {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    opacity: 0.7;
-}
-
-.date-separator {
-    align-self: center;
-    background: #252525;
-    color: #aaa;
-    padding: 5px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    margin: 10px 0;
-}
-
-.chat-image {
-    max-width: 260px;
-    max-height: 260px;
-    border-radius: 12px;
-    margin-top: 6px;
-    display: block;
-}
-
-.attach-form {
-    display: flex;
-    align-items: center;
-}
-
-.attach-button {
-    width: 42px;
-    height: 42px;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    border-radius: 50%;
-
-    background: #252525;
-
-    cursor: pointer;
-
-    font-size: 18px;
-
-    transition: 0.15s;
-}
-
-.attach-button:hover {
-    background: #333;
-}
-
-.send-button {
-    width: 42px;
-    height: 42px;
-
-    border-radius: 50% !important;
-
-    padding: 0 !important;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    font-size: 18px;
-}
-
-.pinned-message {
-    flex-shrink: 0;
-    background: #202020;
-    border-bottom: 1px solid #333;
-    padding: 10px 15px;
-    font-size: 13px;
-}
-
-.pinned-message a {
-    margin-left: 10px;
-    color: #aaa;
-}
-
-.message-menu {
-    display: none;
-    position: absolute;
-    z-index: 9999;
-    background: #202020;
-    border: 1px solid #333;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.message-menu a {
-    display: block;
-    padding: 10px 15px;
-    color: white;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.message-menu a:hover {
-    background: #333;
-}
-
-.message-menu button,
-.message-menu a {
-    display: block;
-
-    width: 100%;
-
-    padding: 10px 15px;
-
-    color: white;
-
-    background: none;
-
-    border: none;
-
-    text-align: left;
-
-    text-decoration: none;
-
-    cursor: pointer;
-}
-
-.message-menu button:hover,
-.message-menu a:hover {
-    background: #333;
-}
-
-</style>
-
 <div class="chat-page">
 
     <div class="chat-sidebar">
@@ -479,29 +9,37 @@ hr {
 
         {% for friend in friends %}
             <a href="/chat/{{ friend.username }}/" class="friend-link">
-
-                <div class="friend-top">
-                    <b>{{ friend.username }}</b>
-
-                    {% if friend.unread_count > 0 %}
-                        <span class="unread-badge">{{ friend.unread_count }}</span>
+                <div class="friend-row">
+                    {% if friend.profile.avatar %}
+                        <img src="{{ friend.profile.avatar.url }}" class="friend-avatar">
+                    {% else %}
+                        <img src="/media/avatars/default.jpg" class="friend-avatar">
                     {% endif %}
-                </div>
 
-                {% if friend.last_message %}
-                    <div class="last-message">
-                        {% if friend.last_message.sender == request.user %}
-                            Вы: {{ friend.last_message.text|truncatechars:28 }}
+                    <div class="friend-info">
+                        <div class="friend-top">
+                            <b>{{ friend.username }}</b>
+
+                            {% if friend.unread_count > 0 %}
+                                <span class="unread-badge">{{ friend.unread_count }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if friend.last_message %}
+                            <div class="last-message">
+                                {% if friend.last_message.sender == request.user %}
+                                    Вы: {{ friend.last_message.text|truncatechars:28 }}
+                                {% else %}
+                                    {{ friend.last_message.text|truncatechars:28 }}
+                                {% endif %}
+                            </div>
                         {% else %}
-                            {{ friend.last_message.text|truncatechars:28 }}
+                            <div class="last-message empty">
+                                Нет сообщений
+                            </div>
                         {% endif %}
                     </div>
-                {% else %}
-                    <div class="last-message empty">
-                        Нет сообщений
-                    </div>
-                {% endif %}
-
+                </div>
             </a>
         {% empty %}
             <p>Нет друзей</p>
@@ -513,48 +51,87 @@ hr {
         {% if selected_user %}
 
             <div class="chat-header">
-                <h2>{{ selected_user.username }}</h2>
-                <div class="online-status">
-                    {% if selected_user.profile.is_online %}
-                        online
-                    {% else %}
-                        был недавно
-                    {% endif %}
+                <div>
+                    <h2>{{ selected_user.username }}</h2>
+
+                    <div id="chat-status" class="online-status"
+                        data-default-status="{% if selected_user.profile.is_online %}В сети{% else %}был недавно{% endif %}">
+                        {% if selected_user.profile.is_online %}
+                            В сети
+                        {% else %}
+                            был недавно
+                        {% endif %}
+                    </div>
                 </div>
-                <div id="typing-status" class="typing-status"></div>
+
+                {% if selected_user.profile.avatar %}
+                    <img src="{{ selected_user.profile.avatar.url }}" class="chat-header-avatar">
+                {% else %}
+                    <img src="/media/avatars/default.jpg" class="chat-header-avatar">
+                {% endif %}
             </div>
 
             {% for pinned in messages %}
                 {% if pinned.is_pinned %}
                     <div class="pinned-message">
-                        📌 Закреп:
-                        {% if pinned.text %}
-                            {{ pinned.text|truncatechars:60 }}
-                        {% else %}
-                            Фото
-                        {% endif %}
 
-                        <a href="{% url 'unpin_message' pinned.id %}">открепить</a>
+                        <div class="pinned-icon">
+                            <span class="material-symbols-rounded">push_pin</span>
+                        </div>
+
+                        <div class="pinned-content">
+                            <div class="pinned-top">
+                                <span class="pinned-label">Закреплённое сообщение</span>
+                                <span class="pinned-author">{{ pinned.sender.username }}</span>
+                            </div>
+
+                            <div class="pinned-text">
+                                {% if pinned.text %}
+                                    {{ pinned.text|truncatechars:90 }}
+                                {% else %}
+                                    Фото
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <a href="{% url 'unpin_message' pinned.id %}" class="unpin-button">
+                            <span class="material-symbols-rounded">close</span>
+                        </a>
+
                     </div>
                 {% endif %}
             {% endfor %}
 
+
+
             <div id="chat-box" class="chat-box">
+                <div id="sticky-date" class="sticky-date"></div>
                 {% for msg in messages %}
-                {% ifchanged msg.created_at.date %}
-                    <div class="date-separator">
-                        {{ msg.created_at|date:"d.m.Y" }}
-                    </div>
-                {% endifchanged %}
+
+                    {% ifchanged msg.created_at.date %}
+                        <div class="date-separator" data-date="{{ msg.created_at|date:'Y-m-d' }}">
+                            {{ msg.created_at|date:"d.m.Y" }}
+                        </div>
+                    {% endifchanged %}
+
                     <div class="message-row {% if msg.sender == request.user %}mine{% else %}other{% endif %}">
                         <div class="message-bubble {% if msg.sender == request.user %}mine{% else %}other{% endif %}"
-                            data-id="{{ msg.id }}"
-                            data-text="{{ msg.text|escapejs }}"
-                            data-mine="{% if msg.sender == request.user %}1{% else %}0{% endif %}"
-                            oncontextmenu="openMessageMenu(event, this)">
+                             data-id="{{ msg.id }}"
+                             data-text="{{ msg.text|escapejs }}"
+                             data-mine="{% if msg.sender == request.user %}1{% else %}0{% endif %}"
+                             oncontextmenu="openMessageMenu(event, this)">
+
                             {% if msg.reply_to %}
                                 <div class="reply-preview">
-                                    Ответ на: {{ msg.reply_to.text|truncatechars:40 }}
+                                    <div class="reply-top">
+                                        <span class="reply-author">
+                                            {{ msg.reply_to.sender.username }}
+                                        </span>
+                                    </div>
+
+                                    <div class="reply-preview-text">
+                                        {{ msg.reply_to.text|truncatechars:70 }}
+                                    </div>
                                 </div>
                             {% endif %}
 
@@ -567,33 +144,61 @@ hr {
                             {% if msg.image %}
                                 <img src="{{ msg.image.url }}" class="chat-image">
                             {% endif %}
-                            <div class="message-time">
-                                {{ msg.created_at|date:"H:i" }}
+
+                            <div class="message-meta">
+                                {% if msg.edited_at %}
+                                    <span class="message-edited">Изменено</span>
+                                {% endif %}
+
+                                <span class="message-time">
+                                    {{ msg.created_at|date:"H:i" }}
+                                </span>
+
+                                {% if msg.sender == request.user %}
+                                    <span class="message-checks {% if msg.is_read %}read{% endif %}">
+                                        {% if msg.is_read %}done_all{% else %}done{% endif %}
+                                    </span>
+                                {% endif %}
                             </div>
+
                         </div>
                     </div>
+
                 {% endfor %}
             </div>
 
             <div id="reply-panel" class="reply-panel">
-                <span id="reply-text"></span>
-                <button type="button" class="cancel-reply" onclick="cancelReply()">✕</button>
+                <div class="reply-panel-icon">
+                    <span class="material-symbols-rounded">reply</span>
+                </div>
+
+                <div class="reply-panel-content">
+                    <div class="reply-panel-title">Ответ на сообщение</div>
+                    <div id="reply-text" class="reply-panel-text"></div>
+                </div>
+
+                <button type="button" class="cancel-reply" onclick="cancelReply()">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
             </div>
+
             <div class="chat-input">
+
                 <form action="{% url 'send_chat_photo' selected_user.username %}"
-                    method="post"
-                    enctype="multipart/form-data"
-                    class="attach-form">
+                      method="post"
+                      enctype="multipart/form-data"
+                      class="attach-form">
 
                     {% csrf_token %}
 
                     <label class="attach-button">
-                        <i class="nf-fa-paperclip"></i>
+                        <span class="material-symbols-rounded">attach_file</span>
+
                         <input type="file"
-                            name="image"
-                            accept="image/*"
-                            onchange="this.form.submit()"
-                            hidden>
+                               name="image"
+                               accept="image/*"
+                               onchange="this.form.submit()"
+                               hidden>
                     </label>
 
                 </form>
@@ -601,294 +206,621 @@ hr {
                 <input id="msg" type="text" placeholder="Сообщение">
 
                 <button class="send-button" onclick="sendMsg()">
-                    ➤
+                    <span class="material-symbols-rounded">send</span>
                 </button>
 
             </div>
 
-
             <div id="message-menu" class="message-menu">
-                <button id="menu-reply">↩ Ответить</button>
-                <button id="menu-edit">✏ Изменить</button>
-                <a id="menu-delete">🗑 Удалить</a>
-                <a id="menu-pin">📌 Закрепить</a>
+                <button id="menu-reply">
+                    <span class="material-symbols-rounded">reply</span>
+                    Ответить
+                </button>
+
+                <button id="menu-edit">
+                    <span class="material-symbols-rounded">edit</span>
+                    Изменить
+                </button>
+
+                <a id="menu-delete">
+                    <span class="material-symbols-rounded">delete</span>
+                    Удалить
+                </a>
+
+                <a id="menu-pin">
+                    <span class="material-symbols-rounded">push_pin</span>
+                    Закрепить
+                </a>
             </div>
-            
-            <script>
-                function openEditMessageFromButton(button) {
-                    const messageId = button.dataset.id;
-                    const oldText = button.dataset.text;
 
-                    const newText = prompt("Изменить сообщение:", oldText);
+            <div id="chat-modal" class="chat-modal">
+                <div class="chat-modal-box">
+                    <div class="chat-modal-title" id="modal-title"></div>
+                    <div class="chat-modal-text" id="modal-text"></div>
 
-                    if (newText === null) return;
-                    if (newText.trim() === "") return;
+                    <input id="modal-input" class="chat-modal-input" type="text">
 
-                    const form = document.createElement("form");
-                    form.method = "POST";
-                    form.action = "/message/" + messageId + "/edit/";
+                    <div class="chat-modal-actions">
+                        <button id="modal-cancel" class="modal-btn secondary">Отмена</button>
+                        <button id="modal-confirm" class="modal-btn primary">Подтвердить</button>
+                    </div>
+                </div>
+            </div>
 
-                    const csrf = document.createElement("input");
-                    csrf.type = "hidden";
-                    csrf.name = "csrfmiddlewaretoken";
-                    csrf.value = "{{ csrf_token }}";
+<script>
+    const username = "{{ selected_user.username }}";
+    const currentUsername = "{{ request.user.username }}";
+    const draftKey = "chat_draft_" + username;
 
-                    const text = document.createElement("input");
-                    text.type = "hidden";
-                    text.name = "text";
-                    text.value = newText.trim();
+    const input = document.getElementById("msg");
+    const box = document.getElementById("chat-box");
+    const chatStatus = document.getElementById("chat-status");
+    let defaultChatStatus = chatStatus.dataset.defaultStatus;
 
-                    form.appendChild(csrf);
-                    form.appendChild(text);
+    const replyPanel = document.getElementById("reply-panel");
+    const replyText = document.getElementById("reply-text");
 
-                    document.body.appendChild(form);
-                    form.submit();
-                }
+    const messageMenu = document.getElementById("message-menu");
+    const menuEdit = document.getElementById("menu-edit");
+    const menuReply = document.getElementById("menu-reply");
+    const menuDelete = document.getElementById("menu-delete");
+    const menuPin = document.getElementById("menu-pin");
 
-                function replyToMessage(button) {
-                    replyToId = button.dataset.id;
+    const chatModal = document.getElementById("chat-modal");
+    const modalTitle = document.getElementById("modal-title");
+    const modalText = document.getElementById("modal-text");
+    const modalInput = document.getElementById("modal-input");
+    const modalCancel = document.getElementById("modal-cancel");
+    const modalConfirm = document.getElementById("modal-confirm");
 
-                    replyText.textContent =
-                        "Ответ на: " + button.dataset.text.slice(0, 80);
+    let typingTimer = null;
+    let isTyping = false;
+    let replyToId = null;
 
-                    replyPanel.classList.add("active");
+    let currentMessageId = null;
+    let currentMessageText = "";
+    let currentMessageMine = false;
 
-                    input.focus();
-                }
+    let modalCallback = null;
 
-                function cancelReply() {
-                    replyToId = null;
-                    replyText.textContent = "";
-                    replyPanel.classList.remove("active");
-                }
+    function openModal({ title, text, input, confirmText, danger, onConfirm }) {
+        modalTitle.textContent = title;
+        modalText.textContent = text || "";
 
-                const username = "{{ selected_user.username }}";
-                const currentUsername = "{{ request.user.username }}";
-                const draftKey = "chat_draft_" + username;
+        modalConfirm.textContent = confirmText || "Ок";
+        modalConfirm.classList.toggle("danger", !!danger);
 
-                const input = document.getElementById("msg");
-                const box = document.getElementById("chat-box");
-                const typingStatus = document.getElementById("typing-status");
+        modalCallback = onConfirm;
 
-                let typingTimer = null;
-                let isTyping = false;
-                
-                let replyToId = null;
+        if (input !== null && input !== undefined) {
+            modalInput.style.display = "block";
+            modalInput.value = input;
+            setTimeout(() => modalInput.focus(), 50);
+        } else {
+            modalInput.style.display = "none";
+            modalInput.value = "";
+        }
 
-                const replyPanel = document.getElementById("reply-panel");
-                const replyText = document.getElementById("reply-text");
-                
+        chatModal.classList.add("active");
+    }
 
-                input.value = localStorage.getItem(draftKey) || "";
+    function closeModal() {
+        chatModal.classList.remove("active");
+        modalCallback = null;
+    }
 
-                input.addEventListener("input", function() {
+    modalCancel.onclick = closeModal;
 
-                    localStorage.setItem(draftKey, input.value);
+    modalConfirm.onclick = function() {
+        if (modalCallback) {
+            modalCallback(modalInput.value);
+        }
 
-                    if (socket.readyState !== WebSocket.OPEN)
-                        return;
+        closeModal();
+    };
 
-                    if (!isTyping) {
+    chatModal.onclick = function(event) {
+        if (event.target === chatModal) {
+            closeModal();
+        }
+    };
 
-                        isTyping = true;
+    function openEditMessageFromButton(button) {
+        const messageId = button.dataset.id;
+        const oldText = button.dataset.text || "";
 
-                        socket.send(JSON.stringify({
-                            type: "typing",
-                            is_typing: true
-                        }));
+        openModal({
+            title: "Изменить сообщение",
+            text: "Отредактируй текст сообщения",
+            input: oldText,
+            confirmText: "Сохранить",
+            danger: false,
+            onConfirm: function(newText) {
+                if (!newText.trim()) return;
 
-                    }
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = "/message/" + messageId + "/edit/";
 
-                    clearTimeout(typingTimer);
+                const csrf = document.createElement("input");
+                csrf.type = "hidden";
+                csrf.name = "csrfmiddlewaretoken";
+                csrf.value = "{{ csrf_token }}";
 
-                    typingTimer = setTimeout(function() {
+                const text = document.createElement("input");
+                text.type = "hidden";
+                text.name = "text";
+                text.value = newText.trim();
 
-                        isTyping = false;
+                form.appendChild(csrf);
+                form.appendChild(text);
 
-                        socket.send(JSON.stringify({
-                            type: "typing",
-                            is_typing: false
-                        }));
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
 
-                    }, 1200);
+    function setChatStatus(text, isTypingStatus = false) {
+        chatStatus.classList.add("status-fade");
 
+        setTimeout(() => {
+            chatStatus.textContent = text;
+            chatStatus.classList.toggle("typing", isTypingStatus);
+            chatStatus.classList.remove("status-fade");
+        }, 120);
+    }
+
+    function replyToMessage(button) {
+        replyToId = button.dataset.id;
+        replyText.textContent = button.dataset.text.slice(0, 80);
+
+        replyPanel.classList.add("active");
+        input.focus();
+    }
+
+    function cancelReply() {
+        replyToId = null;
+        replyText.textContent = "";
+        replyPanel.classList.remove("active");
+    }
+
+    input.value = localStorage.getItem(draftKey) || "";
+
+    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+
+    const socket = new WebSocket(
+        protocol + window.location.host + "/ws/chat/" + username + "/"
+    );
+
+    socket.onopen = function() {
+        console.log("WebSocket connected");
+
+        socket.send(JSON.stringify({
+            type: "mark_read"
+        }));
+    };
+
+    socket.onerror = function(error) {
+        console.log("WebSocket error:", error);
+    };
+
+    socket.onclose = function(event) {
+        console.log("WebSocket closed:", event);
+    };
+
+    box.scrollTop = box.scrollHeight;
+
+    function dateLabel(dateString) {
+        const date = new Date(dateString + "T00:00:00");
+        const today = new Date();
+        const yesterday = new Date();
+
+        yesterday.setDate(today.getDate() - 1);
+
+        const sameDay = (a, b) =>
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate();
+
+        if (sameDay(date, today)) return "Сегодня";
+        if (sameDay(date, yesterday)) return "Вчера";
+
+        return date.toLocaleDateString("ru-RU");
+    }
+
+    function updateDateSeparatorsText() {
+        document.querySelectorAll(".date-separator").forEach(separator => {
+            separator.textContent = dateLabel(separator.dataset.date);
+        });
+    }
+
+    let activeDateSeparator = null;
+
+    function updateRealStickyDateAnimation() {
+        const stickyDate = document.getElementById("sticky-date");
+        const separators = document.querySelectorAll(".date-separator");
+
+        if (!stickyDate || !separators.length) return;
+
+        let current = separators[0];
+
+        const stickyRect = stickyDate.getBoundingClientRect();
+        const triggerLine = stickyRect.top + stickyRect.height + 12;
+
+        separators.forEach(separator => {
+            const rect = separator.getBoundingClientRect();
+
+            if (rect.top <= triggerLine) {
+                current = separator;
+            }
+        });
+
+        if (stickyDate.textContent !== current.textContent) {
+            stickyDate.classList.remove("show");
+
+            setTimeout(() => {
+                stickyDate.textContent = current.textContent;
+                stickyDate.classList.add("show");
+            }, 90);
+        } else {
+            stickyDate.classList.add("show");
+        }
+    }
+
+
+    function lastMessageDate() {
+        const separators = box.querySelectorAll(".date-separator");
+
+        if (!separators.length) return null;
+
+        return separators[separators.length - 1].dataset.date;
+    }
+
+    function addDateSeparatorIfNeeded(dateString) {
+        if (!dateString) return;
+
+        if (lastMessageDate() !== dateString) {
+            const separator = document.createElement("div");
+            separator.className = "date-separator";
+            separator.dataset.date = dateString;
+            separator.textContent = dateLabel(dateString);
+
+            box.appendChild(separator);
+        }
+    }
+
+    function markVisibleMessagesAsRead() {
+        if (socket.readyState !== WebSocket.OPEN) return;
+
+        socket.send(JSON.stringify({
+            type: "mark_read"
+        }));
+    }
+
+    updateDateSeparatorsText();
+
+    box.addEventListener("scroll", updateRealStickyDateAnimation);
+    updateRealStickyDateAnimation();
+
+    setTimeout(markVisibleMessagesAsRead, 300);
+
+    input.addEventListener("input", function() {
+        localStorage.setItem(draftKey, input.value);
+
+        if (socket.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
+        if (!isTyping) {
+            isTyping = true;
+
+            socket.send(JSON.stringify({
+                type: "typing",
+                is_typing: true
+            }));
+        }
+
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(function() {
+            isTyping = false;
+
+            socket.send(JSON.stringify({
+                type: "typing",
+                is_typing: false
+            }));
+        }, 1200);
+    });
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        if (data.type === "read_receipt") {
+            if (data.reader !== currentUsername) {
+                data.message_ids.forEach(function(messageId) {
+                    const bubble = document.querySelector(`.message-bubble[data-id="${messageId}"]`);
+
+                    if (!bubble) return;
+
+                    const checks = bubble.querySelector(".message-checks");
+
+                    if (!checks) return;
+
+                    checks.textContent = "done_all";
+                    checks.classList.add("read");
                 });
+            }
 
-                const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+            return;
+        }
 
-                const socket = new WebSocket(
-                    protocol + window.location.host + "/ws/chat/" + username + "/"
-                );
+        if (data.type === "message_deleted") {
+            const bubble = document.querySelector(`.message-bubble[data-id="${data.message_id}"]`);
 
-                socket.onopen = function() {
-                    console.log("WebSocket connected");
-                };
+            if (bubble) {
+                bubble.closest(".message-row").remove();
+            }
 
-                socket.onerror = function(error) {
-                    console.log("WebSocket error:", error);
-                };
+            return;
+        }
 
-                socket.onclose = function(event) {
-                    console.log("WebSocket closed:", event);
-                };
+        if (data.type === "message_edited") {
+            const bubble = document.querySelector(`.message-bubble[data-id="${data.message_id}"]`);
 
-                box.scrollTop = box.scrollHeight;
+            if (bubble) {
+                const textBlock = bubble.querySelector(".message-text");
 
-                socket.onmessage = function(e) {
-
-                const data = JSON.parse(e.data);
-
-                if (data.type === "typing") {
-
-                    if (data.user !== currentUsername) {
-
-                        typingStatus.textContent =
-                            data.is_typing
-                            ? username + " печатает..."
-                            : "";
-
-                    }
-
-                    return;
+                if (textBlock) {
+                    textBlock.textContent = data.text;
                 }
 
-                const isMine = data.user === currentUsername;
+                bubble.dataset.text = data.text;
 
-                    const wrapper = document.createElement("div");
-                    wrapper.className = "message-row " + (isMine ? "mine" : "other");
+                let meta = bubble.querySelector(".message-meta");
 
-                    const bubble = document.createElement("div");
-                    bubble.className = "message-bubble " + (isMine ? "mine" : "other");
-
-                    bubble.innerHTML = `
-                        <div>${data.message}</div>
-                        <div class="message-time">${data.created_at}</div>
-                    `;
-
-                    wrapper.appendChild(bubble);
-                    box.appendChild(wrapper);
-
-                    box.scrollTop = box.scrollHeight;
-                };
-
-                function sendMsg() {
-                    const text = input.value.trim();
-
-                    if (text === "") return;
-
-                    if (socket.readyState !== WebSocket.OPEN) {
-                        alert("Чат ещё не подключился. Обнови страницу.");
-                        return;
-                    }
-
-                    socket.send(JSON.stringify({
-                        message: text,
-                        reply_to: replyToId
-                    }));
-                    
-                    isTyping = false;
-
-                    socket.send(JSON.stringify({
-                        type: "typing",
-                        is_typing: false
-                    }));
-
-                    input.value = "";
-                    localStorage.removeItem(draftKey);
-                    cancelReply();
+                if (meta && !meta.querySelector(".message-edited")) {
+                    meta.insertAdjacentHTML(
+                        "afterbegin",
+                        `<span class="message-edited">Изменено</span>`
+                    );
                 }
+            }
 
-                input.addEventListener("keypress", function(e) {
-                    if (e.key === "Enter") {
-                        sendMsg();
-                    }
-                });
+            return;
+        }
 
-                const messageMenu = document.getElementById("message-menu");
-                const menuEdit = document.getElementById("menu-edit");
-                const menuReply = document.getElementById("menu-reply");
-                const menuDelete = document.getElementById("menu-delete");
-                const menuPin = document.getElementById("menu-pin");
+        if (data.type === "message_pinned") {
+            location.reload();
+            return;
+        }
 
-                let currentMessageId = null;
-                let currentMessageText = "";
-                let currentMessageMine = false;
+        if (data.type === "message_unpinned") {
+            location.reload();
+            return;
+        }
 
-                function openMessageMenu(event, element) {
-                    event.preventDefault();
+        if (data.type === "user_status") {
+            if (data.user !== currentUsername) {
+                defaultChatStatus = data.is_online
+                    ? "В сети"
+                    : "был недавно";
 
-                    currentMessageId = element.dataset.id;
-                    currentMessageText = element.dataset.text || "";
-                    currentMessageMine = element.dataset.mine === "1";
+                chatStatus.dataset.defaultStatus = defaultChatStatus;
 
-                    menuDelete.href = "/message/" + currentMessageId + "/delete/";
-                    menuPin.href = "/message/" + currentMessageId + "/pin/";
+                setChatStatus(defaultChatStatus, false);
 
-                    if (currentMessageMine) {
-                        menuEdit.style.display = "block";
-                        menuDelete.style.display = "block";
-                    } else {
-                        menuEdit.style.display = "none";
-                        menuDelete.style.display = "none";
-                    }
-
-                    messageMenu.style.display = "block";
-
-                    const menuWidth = messageMenu.offsetWidth;
-                    const menuHeight = messageMenu.offsetHeight;
-
-                    let x = event.clientX;
-                    let y = event.clientY;
-
-                    if (x + menuWidth > window.innerWidth) {
-                        x = window.innerWidth - menuWidth - 10;
-                    }
-
-                    if (y + menuHeight > window.innerHeight) {
-                        y = window.innerHeight - menuHeight - 10;
-                    }
-
-                    messageMenu.style.left = x + "px";
-                    messageMenu.style.top = y + "px";
+                if (data.is_online) {
+                    markVisibleMessagesAsRead();
                 }
+            }
 
-                menuEdit.onclick = function() {
-                    messageMenu.style.display = "none";
+            return;
+        }
 
-                    openEditMessageFromButton({
-                        dataset: {
-                            id: currentMessageId,
-                            text: currentMessageText
-                        }
-                    });
-                };
+        if (data.type === "typing") {
+            if (data.user !== currentUsername) {
+                if (data.is_typing) {
+                    setChatStatus("печатает...", true);
+                } else {
+                    setChatStatus(defaultChatStatus, false);
+                }
+            }
 
-                menuReply.onclick = function() {
-                    messageMenu.style.display = "none";
+            return;
+        }
 
-                    replyToMessage({
-                        dataset: {
-                            id: currentMessageId,
-                            text: currentMessageText
-                        }
-                    });
-                };
+        const isMine = data.user === currentUsername;
 
-                document.addEventListener("click", function() {
-                    messageMenu.style.display = "none";
-                });
+        addDateSeparatorIfNeeded(data.created_date);
 
-                document.getElementById("menu-reply").onclick = function() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "message-row " + (isMine ? "mine" : "other");
 
-                    replyToMessage({
-                        dataset: {
-                            id: currentMessageId,
-                            text: currentMessageText
-                        }
-                    });
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble " + (isMine ? "mine" : "other");
 
-                };
-            </script>
+        bubble.dataset.id = data.message_id;
+        bubble.dataset.text = data.message;
+        bubble.dataset.mine = isMine ? "1" : "0";
+
+        bubble.oncontextmenu = function(event) {
+            openMessageMenu(event, bubble);
+        };
+
+        let replyHtml = "";
+
+        if (data.reply_text) {
+            replyHtml = `
+                <div class="reply-preview">
+                    <div class="reply-top">
+                        <span class="reply-author">
+                            ${data.reply_user || data.user || "Пользователь"}
+                        </span>
+                    </div>
+
+                    <div class="reply-preview-text">
+                        ${data.reply_text}
+                    </div>
+                </div>
+            `;
+        }
+
+        bubble.innerHTML = `
+            ${replyHtml}
+
+            <div class="message-text">
+                ${data.message}
+            </div>
+
+            <div class="message-meta">
+                <span class="message-time">
+                    ${data.created_at}
+                </span>
+
+                ${
+                    isMine
+                        ? `<span class="message-checks ${data.is_read ? "read" : ""}">
+                                ${data.is_read ? "done_all" : "done"}
+                           </span>`
+                        : ""
+                }
+            </div>
+        `;
+
+        wrapper.appendChild(bubble);
+        box.appendChild(wrapper);
+
+        box.scrollTop = box.scrollHeight;
+
+        updateRealStickyDateAnimation();
+
+        if (!isMine) {
+            markVisibleMessagesAsRead();
+        }
+    };
+
+    function sendMsg() {
+        const text = input.value.trim();
+
+        if (text === "") return;
+
+        if (socket.readyState !== WebSocket.OPEN) {
+            alert("Чат ещё не подключился. Обнови страницу.");
+            return;
+        }
+
+        socket.send(JSON.stringify({
+            message: text,
+            reply_to: replyToId
+        }));
+
+        if (isTyping) {
+            isTyping = false;
+
+            socket.send(JSON.stringify({
+                type: "typing",
+                is_typing: false
+            }));
+        }
+
+        input.value = "";
+        localStorage.removeItem(draftKey);
+        cancelReply();
+    }
+
+    input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            sendMsg();
+        }
+    });
+
+    function openMessageMenu(event, element) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        currentMessageId = element.dataset.id;
+        currentMessageText = element.dataset.text || "";
+        currentMessageMine = element.dataset.mine === "1";
+
+        menuDelete.href = "/message/" + currentMessageId + "/delete/";
+        menuPin.href = "/message/" + currentMessageId + "/pin/";
+
+        if (currentMessageMine) {
+            menuEdit.style.display = "flex";
+            menuDelete.style.display = "flex";
+        } else {
+            menuEdit.style.display = "none";
+            menuDelete.style.display = "none";
+        }
+
+        messageMenu.style.display = "block";
+
+        const menuWidth = messageMenu.offsetWidth;
+        const menuHeight = messageMenu.offsetHeight;
+
+        let x = event.clientX;
+        let y = event.clientY;
+
+        if (x + menuWidth > window.innerWidth) {
+            x = window.innerWidth - menuWidth - 10;
+        }
+
+        if (y + menuHeight > window.innerHeight) {
+            y = window.innerHeight - menuHeight - 10;
+        }
+
+        messageMenu.style.left = x + "px";
+        messageMenu.style.top = y + "px";
+    }
+
+    menuEdit.onclick = function() {
+        messageMenu.style.display = "none";
+
+        openEditMessageFromButton({
+            dataset: {
+                id: currentMessageId,
+                text: currentMessageText
+            }
+        });
+    };
+
+    menuReply.onclick = function() {
+        messageMenu.style.display = "none";
+
+        replyToMessage({
+            dataset: {
+                id: currentMessageId,
+                text: currentMessageText
+            }
+        });
+    };
+
+    menuDelete.onclick = function(event) {
+        event.preventDefault();
+
+        const deleteUrl = menuDelete.href;
+
+        messageMenu.style.display = "none";
+
+        openModal({
+            title: "Удалить сообщение?",
+            text: "Это действие нельзя будет отменить.",
+            input: null,
+            confirmText: "Удалить",
+            danger: true,
+            onConfirm: function() {
+                window.location.href = deleteUrl;
+            }
+        });
+    };
+
+    document.addEventListener("click", function(event) {
+        if (!event.target.closest("#message-menu")) {
+            messageMenu.style.display = "none";
+        }
+    });
+</script>
 
         {% else %}
 
@@ -901,6 +833,5 @@ hr {
     </div>
 
 </div>
-
 
 {% endblock %}

@@ -1,0 +1,58 @@
+<div class="avatar-upload-widget">
+
+    {% if widget.is_initial %}
+        <div class="avatar-current-file avatar-actions-row">
+            <button type="button"
+                    class="avatar-view-btn"
+                    data-avatar-url="{{ widget.value.url }}"
+                    onclick="openAvatarPreview(this.dataset.avatarUrl)">
+                <span class="material-symbols-rounded">visibility</span>
+                Посмотреть аватар
+            </button>
+
+            {% if not widget.required %}
+                <label class="avatar-clear-btn">
+                    <input type="checkbox"
+                           name="{{ widget.checkbox_name }}"
+                           id="{{ widget.checkbox_id }}">
+
+                    <span class="material-symbols-rounded">delete</span>
+                    Удалить аватар
+                </label>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div id="new-avatar-actions" class="avatar-current-file avatar-actions-row hidden-avatar-actions">
+        <button type="button"
+                class="avatar-view-btn"
+                onclick="openSelectedAvatarPreview()">
+            <span class="material-symbols-rounded">visibility</span>
+            Посмотреть новый
+        </button>
+
+        <button type="button"
+                class="avatar-clear-btn"
+                onclick="clearSelectedAvatar()">
+            <span class="material-symbols-rounded">delete</span>
+            Удалить новый
+        </button>
+    </div>
+
+    <label class="avatar-change-btn">
+        <span class="material-symbols-rounded">upload</span>
+        <span id="avatar-upload-text">Выбрать новый аватар</span>
+
+        <input type="{{ widget.type }}"
+               name="{{ widget.name }}"
+               id="avatar-file-input"
+               {% include "django/forms/widgets/attrs.html" %}
+               hidden>
+    </label>
+
+    <div id="avatar-selected-state" class="avatar-selected-state">
+        <span class="material-symbols-rounded">check_circle</span>
+        Новый аватар выбран. Не забудь сохранить изменения.
+    </div>
+
+</div>

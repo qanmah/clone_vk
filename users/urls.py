@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('create/', views.create_post, name='create_post'),
     path('register/', views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
@@ -24,4 +25,9 @@ urlpatterns = [
     path("message/<int:message_id>/pin/", views.pin_message, name="pin_message"),
     path("message/<int:message_id>/unpin/", views.unpin_message, name="unpin_message"),
     path("chat/<str:username>/photo/", views.send_chat_photo, name="send_chat_photo"),
+    path("post/<int:post_id>/like/", views.toggle_like, name="toggle_like"),
+    path("post/<int:post_id>/comment/", views.add_comment, name="add_comment"),
+    path("post/<int:post_id>/", views.post_detail, name="post_detail"),
+    path("post/<int:post_id>/save/", views.toggle_save_post, name="toggle_save_post"),
+    path("post/<int:post_id>/view/", views.register_view, name="register_view"),
 ]
